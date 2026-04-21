@@ -158,15 +158,31 @@ def _load_from_snapshot(index_name: str) -> list[dict]:
         return []
 
 
+TOP_N = 20  # keep in sync with constituent_store.TOP_N
+
+
+def _cap_top_n(rows: list[dict]) -> list[dict]:
+    """Take the top-N by weight and renormalize so the truncated set sums to 1.0."""
+    if not rows:
+        return rows
+    sorted_rows = sorted(rows, key=lambda c: c.get("weight", 0.0) or 0.0, reverse=True)
+    top = sorted_rows[:TOP_N]
+    total = sum((c.get("weight") or 0.0) for c in top)
+    if total > 0:
+        for c in top:
+            c["weight"] = (c.get("weight") or 0.0) / total
+    return top
+
+
 def _build_constituents(index_name: str, stub: list[dict]) -> list[dict]:
-    """Return live data from snapshot, or fall back to stub."""
+    """Return top-N live data from snapshot, or fall back to top-N of the stub."""
     rows = _load_from_snapshot(index_name)
     if rows:
-        return rows
+        return _cap_top_n(rows)
     logger.warning(
         "No snapshot data for %s; using hardcoded stub (%d rows).", index_name, len(stub)
     )
-    return stub
+    return _cap_top_n(stub)
 
 
 # ---------------------------------------------------------------------------

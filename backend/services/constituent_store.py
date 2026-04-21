@@ -21,6 +21,24 @@ logger = logging.getLogger(__name__)
 
 VALID_INDEXES = {"sp500", "nasdaq100", "russell1000"}
 
+# Cap each index at the top-N by market-cap weight. Chosen to keep portfolio
+# construction fast and broker-friendly (20 round-lot trades vs 500+). Weights
+# are renormalized so the truncated set sums to 1.0.
+TOP_N = 20
+
+
+def _top_n_renormalized(constituents: list[dict]) -> list[dict]:
+    """Sort by weight desc, take top N, renormalize weights to sum to 1.0."""
+    if not constituents:
+        return constituents
+    sorted_rows = sorted(constituents, key=lambda c: c.get("weight", 0.0) or 0.0, reverse=True)
+    top = sorted_rows[:TOP_N]
+    total = sum((c.get("weight") or 0.0) for c in top)
+    if total > 0:
+        for c in top:
+            c["weight"] = (c.get("weight") or 0.0) / total
+    return top
+
 SNAPSHOT_PATH = os.path.join(
     os.path.dirname(__file__), "..", "data", "constituents_snapshot.json"
 )
@@ -77,6 +95,12 @@ async def refresh_index(db: AsyncSession, index_name: str) -> list[dict]:
 
     # 2. Compute weights
     constituents = await compute_weights(raw)
+
+    # 2b. Cap at top-N by weight and renormalize. The long tail of 450+ small-cap
+    # names isn't usable in a retail direct-indexing product — it's too many
+    # positions, too many tiny round-lot trades, and the marginal exposure at
+    # each additional name is a rounding error.
+    constituents = _top_n_renormalized(constituents)
 
     # 3 & 4. DB transaction: deactivate old, insert new
     async with db.begin_nested():
