@@ -1,0 +1,1 @@
+Analyze what this does.  I want to build a direct indexing tool that is production ready for real world use

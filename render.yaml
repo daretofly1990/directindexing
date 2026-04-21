@@ -1,0 +1,70 @@
+# Render.com deployment config.
+# https://render.com/docs/blueprint-spec
+#
+# Usage:
+#   1. Push this repo to GitHub
+#   2. On Render → New → Blueprint → pick the repo
+#   3. Render provisions web service + Postgres, wires DATABASE_URL automatically
+#   4. Set remaining secrets in the dashboard (JWT_SECRET, FINNHUB_API_KEY, etc.)
+
+services:
+  - type: web
+    name: direct-indexing
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: starter         # $7/mo; bump to standard for prod traffic
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: direct-indexing-db
+          property: connectionString
+      - key: JSON_LOGS
+        value: "1"
+      - key: SENTRY_ENVIRONMENT
+        value: production
+      - key: APP_VERSION
+        value: "1.0.0"
+      - key: TOTP_ISSUER
+        value: DirectIndex Pro
+      # Secrets — set in the Render dashboard, not in this file:
+      - key: JWT_SECRET
+        sync: false
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: FINNHUB_API_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: FIELD_ENCRYPTION_KEYS
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: SMTP_FROM
+        sync: false
+      - key: APP_BASE_URL
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: SENTRY_DSN
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: S3_BACKUP_BUCKET
+        sync: false
+
+databases:
+  - name: direct-indexing-db
+    plan: starter          # $7/mo; bump to standard in prod
+    postgresMajorVersion: 16

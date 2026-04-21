@@ -1,0 +1,20 @@
+{
+    # Global options
+    admin off
+    # Remove "email" line to use self-signed certs for local/dev.
+    # For production: uncomment and set your email for Let's Encrypt.
+    # email your@email.com
+}
+
+# Replace with your actual domain for production.
+# For local dev with self-signed cert, use :443 or a local hostname.
+:443 {
+    tls internal
+
+    reverse_proxy api:8000
+}
+
+# Redirect HTTP → HTTPS
+:80 {
+    redir https://{host}{uri} permanent
+}

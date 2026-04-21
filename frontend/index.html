@@ -1,0 +1,3832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>DirectIndex Pro</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --surface2: #243044;
+      --border: #334155;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --success: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --purple: #8b5cf6;
+      --cyan: #06b6d4;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --radius: 10px;
+      --radius-sm: 6px;
+    }
+    html, body { height: 100%; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    /* ---- SCROLLBAR ---- */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* ---- NAVBAR ---- */
+    .navbar {
+      position: sticky; top: 0; z-index: 100;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 16px;
+      padding: 0 24px;
+      height: 58px;
+    }
+    .navbar-logo {
+      display: flex; align-items: center; gap: 10px;
+      font-weight: 700; font-size: 18px; color: var(--primary);
+      text-decoration: none; white-space: nowrap;
+    }
+    .navbar-logo .logo-icon {
+      width: 32px; height: 32px; border-radius: 8px;
+      background: linear-gradient(135deg, var(--primary), var(--purple));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; flex-shrink: 0;
+    }
+    .navbar-spacer { flex: 1; }
+    .portfolio-selector {
+      display: flex; align-items: center; gap: 10px;
+    }
+    .portfolio-selector label { color: var(--muted); font-size: 13px; white-space: nowrap; }
+    .portfolio-selector select {
+      background: var(--surface2); border: 1px solid var(--border);
+      color: var(--text); padding: 7px 12px; border-radius: var(--radius-sm);
+      font-size: 13px; font-family: inherit; cursor: pointer; min-width: 180px;
+      outline: none;
+    }
+    .portfolio-selector select:focus { border-color: var(--primary); }
+
+    /* ---- BUTTONS ---- */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 8px 16px; border-radius: var(--radius-sm); border: none;
+      font-size: 13px; font-weight: 500; font-family: inherit;
+      cursor: pointer; transition: all 0.15s; white-space: nowrap; text-decoration: none;
+    }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover:not(:disabled) { background: var(--primary-hover); }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-danger:hover:not(:disabled) { background: #dc2626; }
+    .btn-success { background: var(--success); color: #fff; }
+    .btn-success:hover:not(:disabled) { background: #059669; }
+    .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+    .btn-ghost:hover:not(:disabled) { background: var(--surface2); color: var(--text); }
+    .btn-sm { padding: 5px 10px; font-size: 12px; }
+    .btn-warning { background: var(--warning); color: #000; }
+    .btn-warning:hover:not(:disabled) { background: #d97706; }
+
+    /* ---- TABS ---- */
+    .tab-nav {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex; padding: 0 24px; gap: 0;
+      overflow-x: auto;
+    }
+    .tab-nav::-webkit-scrollbar { height: 0; }
+    .tab-btn {
+      padding: 14px 20px; border: none; background: transparent;
+      color: var(--muted); font-size: 13px; font-weight: 500; font-family: inherit;
+      cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap;
+      transition: all 0.15s; display: flex; align-items: center; gap: 6px;
+    }
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+    /* ---- MAIN CONTENT ---- */
+    .main { padding: 24px; max-width: 1400px; margin: 0 auto; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ---- CARDS ---- */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+    }
+    .card-title {
+      font-size: 14px; font-weight: 600; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 16px;
+    }
+
+    /* ---- METRIC CARDS GRID ---- */
+    .metrics-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px;
+    }
+    @media (max-width: 1100px) { .metrics-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 600px) { .metrics-grid { grid-template-columns: 1fr; } }
+    .metric-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 20px;
+    }
+    .metric-label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+    .metric-value { font-size: 26px; font-weight: 700; line-height: 1.2; }
+    .metric-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+    .metric-value.positive { color: var(--success); }
+    .metric-value.negative { color: var(--danger); }
+    .metric-value.neutral { color: var(--text); }
+
+    /* ---- DASHBOARD GRID ---- */
+    .dashboard-grid {
+      display: grid; grid-template-columns: 380px 1fr; gap: 20px;
+    }
+    @media (max-width: 900px) { .dashboard-grid { grid-template-columns: 1fr; } }
+
+    /* ---- CHARTS ---- */
+    .chart-container { position: relative; }
+    .chart-container canvas { max-height: 280px; }
+
+    /* ---- SECTOR LEGEND ---- */
+    .sector-legend { margin-top: 16px; display: flex; flex-direction: column; gap: 6px; }
+    .sector-legend-item {
+      display: flex; align-items: center; gap: 8px; font-size: 12px;
+    }
+    .sector-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .sector-legend-label { flex: 1; color: var(--text); }
+    .sector-legend-pct { color: var(--muted); font-variant-numeric: tabular-nums; }
+
+    /* ---- TABLES ---- */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th {
+      text-align: left; padding: 10px 14px;
+      font-size: 11px; font-weight: 600; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.05em;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap; cursor: pointer; user-select: none;
+    }
+    th:hover { color: var(--text); }
+    th.sort-asc::after { content: ' ↑'; color: var(--primary); }
+    th.sort-desc::after { content: ' ↓'; color: var(--primary); }
+    td {
+      padding: 11px 14px; border-bottom: 1px solid #1e2d40;
+      font-size: 13px; white-space: nowrap; vertical-align: middle;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+    .td-symbol { font-weight: 600; color: var(--primary); font-size: 13px; }
+    .td-name { color: var(--muted); font-size: 12px; max-width: 200px; overflow: hidden; text-overflow: ellipsis; }
+    .td-positive { color: var(--success); font-weight: 500; }
+    .td-negative { color: var(--danger); font-weight: 500; }
+    .td-neutral { color: var(--text); }
+    .td-right { text-align: right; }
+
+    /* ---- BADGES ---- */
+    .badge {
+      display: inline-block; padding: 2px 8px; border-radius: 4px;
+      font-size: 11px; font-weight: 600; letter-spacing: 0.02em;
+    }
+    .badge-buy { background: rgba(59,130,246,0.2); color: var(--primary); }
+    .badge-sell { background: rgba(249,115,22,0.2); color: #f97316; }
+    .badge-harvest { background: rgba(139,92,246,0.2); color: var(--purple); }
+    .badge-info { background: rgba(6,182,212,0.2); color: var(--cyan); }
+    .badge-danger { background: rgba(239,68,68,0.2); color: var(--danger); }
+    .badge-success { background: rgba(16,185,129,0.2); color: var(--success); }
+
+    /* ---- TOP MOVERS ---- */
+    .movers-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 700px) { .movers-grid { grid-template-columns: 1fr; } }
+    .mover-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 0; border-bottom: 1px solid #1e2d40;
+    }
+    .mover-item:last-child { border-bottom: none; }
+    .mover-symbol { font-weight: 600; font-size: 13px; }
+    .mover-name { font-size: 11px; color: var(--muted); }
+    .mover-pct { font-weight: 600; font-size: 13px; }
+
+    /* ---- TAX LOSS CARDS ---- */
+    .tax-summary {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px;
+    }
+    @media (max-width: 800px) { .tax-summary { grid-template-columns: 1fr; } }
+    .harvest-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 20px; margin-bottom: 12px;
+    }
+    .harvest-card-header {
+      display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 14px;
+    }
+    .harvest-meta { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 14px; }
+    .harvest-meta-item .label { font-size: 11px; color: var(--muted); text-transform: uppercase; }
+    .harvest-meta-item .value { font-size: 14px; font-weight: 600; margin-top: 2px; }
+    .replacements { margin-top: 12px; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+    .replacement-tag {
+      background: rgba(59,130,246,0.15); color: var(--primary);
+      border: 1px solid rgba(59,130,246,0.3);
+      padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;
+    }
+
+    /* ---- ESG ---- */
+    .esg-grid { display: grid; grid-template-columns: 280px 1fr; gap: 20px; }
+    @media (max-width: 900px) { .esg-grid { grid-template-columns: 1fr; } }
+    .esg-score-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 28px; text-align: center;
+    }
+    .esg-grade-big {
+      font-size: 72px; font-weight: 800; line-height: 1;
+      margin-bottom: 8px;
+    }
+    .esg-score-num { font-size: 20px; font-weight: 600; color: var(--muted); margin-bottom: 4px; }
+    .esg-label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+    .esg-concerns { margin-top: 20px; text-align: left; }
+    .concern-tag {
+      display: inline-block; background: rgba(245,158,11,0.15);
+      border: 1px solid rgba(245,158,11,0.3); color: var(--warning);
+      padding: 3px 8px; border-radius: 4px; font-size: 11px; margin: 3px 3px 0 0;
+    }
+    .exclusion-form { background: var(--surface2); border-radius: var(--radius-sm); padding: 16px; margin-bottom: 16px; }
+    .form-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; margin-top: 12px; }
+    .form-group { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 120px; }
+    .form-group label { font-size: 12px; color: var(--muted); }
+    .form-group input, .form-group select {
+      background: var(--surface); border: 1px solid var(--border);
+      color: var(--text); padding: 8px 12px; border-radius: var(--radius-sm);
+      font-size: 13px; font-family: inherit; outline: none; width: 100%;
+    }
+    .form-group input:focus, .form-group select:focus { border-color: var(--primary); }
+    .exclusion-list { display: flex; flex-direction: column; gap: 8px; }
+    .exclusion-item {
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--surface2); border-radius: var(--radius-sm); padding: 10px 14px;
+    }
+    .exclusion-info { display: flex; gap: 10px; align-items: center; }
+    .exclusion-type-badge {
+      font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 3px;
+      text-transform: uppercase;
+    }
+    .exclusion-type-sector { background: rgba(139,92,246,0.2); color: var(--purple); }
+    .exclusion-type-symbol { background: rgba(59,130,246,0.2); color: var(--primary); }
+
+    /* ---- REBALANCING ---- */
+    .rebal-summary {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px;
+    }
+    @media (max-width: 900px) { .rebal-summary { grid-template-columns: repeat(2, 1fr); } }
+    .drift-bar-wrap { display: flex; align-items: center; gap: 8px; min-width: 140px; }
+    .drift-bar-bg { flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+    .drift-bar-fill { height: 100%; border-radius: 3px; }
+    .drift-pos { background: var(--danger); }
+    .drift-neg { background: var(--success); }
+    .drift-value { font-size: 12px; font-variant-numeric: tabular-nums; min-width: 40px; }
+
+    /* ---- MODAL ---- */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0; z-index: 200;
+      background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+      align-items: center; justify-content: center; padding: 20px;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; padding: 32px; width: 100%; max-width: 520px;
+      max-height: 90vh; overflow-y: auto;
+    }
+    .modal-title { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+    .modal-sub { color: var(--muted); font-size: 13px; margin-bottom: 24px; }
+    .modal-section { margin-bottom: 20px; }
+    .modal-section-title { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; }
+    .modal-input {
+      width: 100%; background: var(--surface2); border: 1px solid var(--border);
+      color: var(--text); padding: 10px 14px; border-radius: var(--radius-sm);
+      font-size: 14px; font-family: inherit; outline: none; margin-bottom: 4px;
+    }
+    .modal-input:focus { border-color: var(--primary); }
+    .modal-input-label { font-size: 12px; color: var(--muted); margin-bottom: 6px; display: block; }
+    .sector-checkboxes {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+    }
+    .sector-checkbox {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 9px 12px; cursor: pointer;
+      transition: all 0.15s; user-select: none;
+    }
+    .sector-checkbox:hover { border-color: var(--primary); }
+    .sector-checkbox input[type="checkbox"] { width: 14px; height: 14px; accent-color: var(--primary); cursor: pointer; }
+    .sector-checkbox span { font-size: 12px; color: var(--text); }
+    .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; }
+
+    /* ---- TOASTS ---- */
+    #toast-container {
+      position: fixed; top: 20px; right: 20px; z-index: 9999;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .toast {
+      min-width: 280px; max-width: 400px;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 12px 16px;
+      display: flex; align-items: flex-start; gap: 10px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      animation: slideIn 0.2s ease;
+    }
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    .toast-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+    .toast-msg { font-size: 13px; line-height: 1.4; flex: 1; }
+    .toast-success { border-left: 3px solid var(--success); }
+    .toast-error { border-left: 3px solid var(--danger); }
+    .toast-info { border-left: 3px solid var(--primary); }
+    .toast-warning { border-left: 3px solid var(--warning); }
+
+    /* ---- LOADING ---- */
+    .loading-overlay {
+      display: none; position: fixed; inset: 0; z-index: 300;
+      background: rgba(15,23,42,0.7); backdrop-filter: blur(2px);
+      align-items: center; justify-content: center;
+    }
+    .loading-overlay.show { display: flex; }
+    .spinner {
+      width: 44px; height: 44px; border: 3px solid var(--border);
+      border-top-color: var(--primary); border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ---- EMPTY STATE ---- */
+    .empty-state {
+      text-align: center; padding: 60px 20px; color: var(--muted);
+    }
+    .empty-state .empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
+    .empty-state h3 { font-size: 16px; color: var(--text); margin-bottom: 8px; }
+    .empty-state p { font-size: 13px; max-width: 300px; margin: 0 auto; }
+
+    /* ---- SECTION HEADER ---- */
+    .section-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 16px; flex-wrap: wrap; gap: 10px;
+    }
+    .section-title { font-size: 16px; font-weight: 600; }
+
+    /* ---- SEARCH INPUT ---- */
+    .search-input {
+      background: var(--surface2); border: 1px solid var(--border);
+      color: var(--text); padding: 7px 12px; border-radius: var(--radius-sm);
+      font-size: 13px; font-family: inherit; outline: none; min-width: 200px;
+    }
+    .search-input:focus { border-color: var(--primary); }
+
+    /* ---- PROGRESS BAR ---- */
+    .progress-bar-bg {
+      height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; margin-top: 8px;
+    }
+    .progress-bar-fill { height: 100%; border-radius: 2px; background: var(--primary); transition: width 0.3s; }
+
+    /* ---- DIVIDER ---- */
+    .divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+
+    /* ---- INLINE FLEX UTILITIES ---- */
+    .flex { display: flex; }
+    .flex-col { flex-direction: column; }
+    .items-center { align-items: center; }
+    .gap-2 { gap: 8px; }
+    .gap-3 { gap: 12px; }
+    .ml-auto { margin-left: auto; }
+    .mt-1 { margin-top: 4px; }
+    .mt-2 { margin-top: 8px; }
+    .mt-3 { margin-top: 12px; }
+    .mt-4 { margin-top: 16px; }
+    .mb-4 { margin-bottom: 16px; }
+    .text-muted { color: var(--muted); }
+    .text-sm { font-size: 12px; }
+    .font-bold { font-weight: 700; }
+
+    /* ---- SECTOR RATING TABLE ---- */
+    .esg-sector-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-top: 12px;
+    }
+    .esg-sector-item {
+      background: var(--surface2); border-radius: var(--radius-sm); padding: 12px;
+      border: 1px solid var(--border);
+    }
+    .esg-sector-name { font-size: 12px; font-weight: 600; margin-bottom: 4px; }
+    .esg-sector-grade { font-size: 18px; font-weight: 800; }
+    .esg-sector-score { font-size: 11px; color: var(--muted); }
+
+    /* ---- GRADE COLORS ---- */
+    .grade-A { color: #10b981; }
+    .grade-Bplus { color: #22c55e; }
+    .grade-B { color: #84cc16; }
+    .grade-Cplus { color: #f59e0b; }
+    .grade-C { color: #f97316; }
+    .grade-D { color: #ef4444; }
+    .grade-Bminus { color: #84cc16; }
+
+    /* ---- UTIL ---- */
+    .nowrap { white-space: nowrap; }
+
+    /* ---- TOOLTIPS ---- */
+    .tip {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 14px; height: 14px; border-radius: 50%;
+      background: var(--surface2); color: var(--muted);
+      font-size: 10px; font-weight: 700; cursor: help;
+      margin-left: 4px; position: relative; user-select: none;
+      border: 1px solid var(--border);
+    }
+    .tip::after {
+      content: attr(data-tip);
+      position: absolute; bottom: calc(100% + 6px); left: 50%;
+      transform: translateX(-50%);
+      background: #0b1220; color: var(--text);
+      padding: 10px 14px; border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      font-size: 12px; font-weight: 400; line-height: 1.5;
+      white-space: normal; width: 260px;
+      opacity: 0; pointer-events: none; transition: opacity 0.12s;
+      z-index: 500;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    }
+    .tip:hover::after, .tip:focus::after { opacity: 1; }
+
+    /* ---- DISCLOSURE BANNER ---- */
+    .disclosure {
+      background: rgba(245,158,11,0.08);
+      border: 1px solid rgba(245,158,11,0.25);
+      color: var(--warning);
+      padding: 10px 14px; border-radius: var(--radius-sm);
+      font-size: 11px; line-height: 1.5; margin-bottom: 14px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN OVERLAY -->
+<div id="login-overlay" style="display:none;position:fixed;inset:0;z-index:9999;background:var(--bg);align-items:center;justify-content:center;">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:40px 36px;width:100%;max-width:380px;box-shadow:0 24px 64px rgba(0,0,0,0.5);">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:28px;">
+      <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,var(--primary),var(--purple));display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">&#9678;</div>
+      <div>
+        <div style="font-weight:700;font-size:18px;">DirectIndex Pro</div>
+        <div style="font-size:12px;color:var(--muted);">Sign in to continue</div>
+      </div>
+    </div>
+    <form id="login-form" onsubmit="handleLogin(event)">
+      <div style="margin-bottom:14px;">
+        <label style="display:block;font-size:12px;color:var(--muted);margin-bottom:5px;">Email</label>
+        <input id="login-email" type="email" placeholder="you@firm.com" autocomplete="username"
+          style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:var(--radius-sm);font-size:14px;font-family:inherit;outline:none;" />
+      </div>
+      <div style="margin-bottom:20px;">
+        <label style="display:block;font-size:12px;color:var(--muted);margin-bottom:5px;">Password</label>
+        <input id="login-password" type="password" placeholder="••••••••" autocomplete="current-password"
+          style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:var(--radius-sm);font-size:14px;font-family:inherit;outline:none;" />
+      </div>
+      <div id="login-error" style="display:none;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.3);color:var(--danger);padding:9px 12px;border-radius:var(--radius-sm);font-size:13px;margin-bottom:16px;"></div>
+      <button type="submit" id="login-btn" class="btn btn-primary" style="width:100%;padding:11px;font-size:14px;">Sign in</button>
+    </form>
+    <div style="text-align:center;margin-top:18px;font-size:12px;color:var(--muted);">
+      New here? <a href="#" onclick="showSignupScreen(event)" style="color:var(--primary);font-weight:600;text-decoration:none;">Create an account</a>
+    </div>
+  </div>
+</div>
+
+<!-- SIGNUP OVERLAY -->
+<div id="signup-overlay" style="display:none;position:fixed;inset:0;z-index:9999;background:var(--bg);align-items:center;justify-content:center;">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:40px 36px;width:100%;max-width:420px;box-shadow:0 24px 64px rgba(0,0,0,0.5);">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+      <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,var(--primary),var(--purple));display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">&#9678;</div>
+      <div>
+        <div style="font-weight:700;font-size:18px;">Create your account</div>
+        <div style="font-size:12px;color:var(--muted);">Direct indexing + tax-loss harvesting</div>
+      </div>
+    </div>
+    <form id="signup-form" onsubmit="handleSignup(event)">
+      <div style="margin-bottom:12px;">
+        <label style="display:block;font-size:12px;color:var(--muted);margin-bottom:5px;">Full name</label>
+        <input id="su-name" type="text" placeholder="Jane Doe"
+          style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:var(--radius-sm);font-size:14px;"/>
+      </div>
+      <div style="margin-bottom:12px;">
+        <label style="display:block;font-size:12px;color:var(--muted);margin-bottom:5px;">Email</label>
+        <input id="su-email" type="email" placeholder="you@example.com" autocomplete="email"
+          style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:var(--radius-sm);font-size:14px;"/>
+      </div>
+      <div style="margin-bottom:16px;">
+        <label style="display:block;font-size:12px;color:var(--muted);margin-bottom:5px;">Password (min 8 chars)</label>
+        <input id="su-password" type="password" autocomplete="new-password"
+          style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:var(--radius-sm);font-size:14px;"/>
+      </div>
+      <div id="signup-error" style="display:none;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.3);color:var(--danger);padding:9px 12px;border-radius:var(--radius-sm);font-size:13px;margin-bottom:16px;"></div>
+      <button type="submit" id="signup-btn" class="btn btn-primary" style="width:100%;padding:11px;font-size:14px;">Create account</button>
+    </form>
+    <div style="text-align:center;margin-top:18px;font-size:12px;color:var(--muted);">
+      Already registered? <a href="#" onclick="showLoginFromSignup(event)" style="color:var(--primary);font-weight:600;text-decoration:none;">Sign in</a>
+    </div>
+  </div>
+</div>
+
+<!-- ACKNOWLEDGEMENT GATE (ToS / ADV / Privacy) -->
+<div id="ack-overlay" style="display:none;position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,0.75);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:20px;">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px;width:100%;max-width:640px;max-height:85vh;overflow-y:auto;">
+    <div style="font-size:18px;font-weight:700;margin-bottom:6px;">Before we continue</div>
+    <div style="color:var(--muted);font-size:13px;margin-bottom:20px;">
+      As a Registered Investment Adviser (in progress), we are required by SEC Rule 204 to deliver and log your acceptance of the following before generating any personalized recommendation.
+    </div>
+    <div id="ack-items"></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;">
+      <button class="btn btn-ghost" onclick="logout()">Sign out</button>
+      <button class="btn btn-primary" id="ack-continue" onclick="finishAcks()" disabled>Continue</button>
+    </div>
+  </div>
+</div>
+
+<!-- ONBOARDING WIZARD -->
+<div id="wizard-overlay" style="display:none;position:fixed;inset:0;z-index:9997;background:rgba(0,0,0,0.8);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:20px;">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;width:100%;max-width:620px;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;">
+    <div style="padding:18px 24px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <div style="font-size:16px;font-weight:700;">Let&rsquo;s get you set up</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px;" id="wz-subtitle">Step 1 of 4</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="skipWizard()">Skip</button>
+    </div>
+    <div style="padding:2px 24px;">
+      <div style="height:4px;background:var(--border);border-radius:2px;margin-bottom:16px;">
+        <div id="wz-progress" style="height:100%;width:25%;background:var(--primary);border-radius:2px;transition:width 0.2s;"></div>
+      </div>
+    </div>
+    <div id="wz-body" style="padding:0 24px 20px;overflow-y:auto;flex:1;"></div>
+    <div style="padding:14px 24px;border-top:1px solid var(--border);display:flex;justify-content:space-between;">
+      <button class="btn btn-ghost" onclick="wizardBack()" id="wz-back" style="visibility:hidden;">Back</button>
+      <button class="btn btn-primary" onclick="wizardNext()" id="wz-next">Continue</button>
+    </div>
+  </div>
+</div>
+
+<!-- LOADING OVERLAY -->
+<div id="loading-overlay" class="loading-overlay">
+  <div class="spinner"></div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div id="toast-container"></div>
+
+<!-- MODAL: CREATE PORTFOLIO -->
+<div id="create-modal" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-title">Create Portfolio</div>
+    <div class="modal-sub">Set up a new direct index portfolio tracking the S&P 500</div>
+
+    <div class="modal-section">
+      <label class="modal-input-label">Portfolio Name</label>
+      <input id="modal-name" class="modal-input" type="text" placeholder="e.g. My Direct Index" value="My Direct Index"/>
+    </div>
+
+    <div class="modal-section">
+      <label class="modal-input-label">Initial Investment ($)</label>
+      <input id="modal-value" class="modal-input" type="number" placeholder="100000" value="100000" min="10000" step="1000"/>
+    </div>
+
+    <div class="modal-section">
+      <div class="modal-section-title">ESG Exclusions (Optional)</div>
+      <div class="sector-checkboxes" id="sector-checkboxes">
+        <label class="sector-checkbox">
+          <input type="checkbox" value="Energy"> <span>Energy</span>
+        </label>
+        <label class="sector-checkbox">
+          <input type="checkbox" value="Industrials"> <span>Industrials</span>
+        </label>
+        <label class="sector-checkbox">
+          <input type="checkbox" value="Materials"> <span>Materials</span>
+        </label>
+        <label class="sector-checkbox">
+          <input type="checkbox" value="Consumer Discretionary"> <span>Consumer Discretionary</span>
+        </label>
+        <label class="sector-checkbox">
+          <input type="checkbox" value="Financials"> <span>Financials</span>
+        </label>
+        <label class="sector-checkbox">
+          <input type="checkbox" value="Communication Services"> <span>Communication Services</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="hideCreateModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="submitCreatePortfolio()">Create &amp; Construct</button>
+    </div>
+  </div>
+</div>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <a href="#" class="navbar-logo">
+    <div class="logo-icon">&#9678;</div>
+    DirectIndex Pro
+  </a>
+  <div class="navbar-spacer"></div>
+  <div class="portfolio-selector">
+    <label>Portfolio:</label>
+    <select id="portfolio-select" onchange="onPortfolioChange(this.value)">
+      <option value="">Loading...</option>
+    </select>
+  </div>
+  <button class="btn btn-primary btn-sm" onclick="showCreateModal()">+ New Portfolio</button>
+  <button class="btn btn-ghost btn-sm" onclick="logout()" id="logout-btn" style="display:none;">Sign out</button>
+</nav>
+
+<!-- TAB NAV -->
+<div class="tab-nav">
+  <button class="tab-btn active" data-tab="dashboard" onclick="switchTab('dashboard')">
+    &#9632; Dashboard
+  </button>
+  <button class="tab-btn" data-tab="positions" onclick="switchTab('positions')">
+    &#9654; Positions
+  </button>
+  <button class="tab-btn" data-tab="taxloss" onclick="switchTab('taxloss')">
+    &#9650; Tax-Loss Harvesting
+  </button>
+  <button class="tab-btn" data-tab="esg" onclick="switchTab('esg')">
+    &#9675; ESG
+  </button>
+  <button class="tab-btn" data-tab="rebalancing" onclick="switchTab('rebalancing')">
+    &#8646; Rebalancing
+  </button>
+  <button class="tab-btn" data-tab="transactions" onclick="switchTab('transactions')">
+    &#9997; Transactions
+  </button>
+  <button class="tab-btn" data-tab="backtest" onclick="switchTab('backtest')">
+    &#9654;&#9654; Backtesting
+  </button>
+  <button class="tab-btn" data-tab="lots" onclick="switchTab('lots')">
+    &#9744; Lots &amp; Sell
+  </button>
+  <button class="tab-btn" data-tab="import" onclick="switchTab('import')">
+    &#8595; Import
+  </button>
+  <button class="tab-btn" data-tab="advisor" onclick="switchTab('advisor')">
+    &#9728; AI Advisor
+  </button>
+  <button class="tab-btn" data-tab="plans" onclick="switchTab('plans')">
+    &#9745; Trade Plans
+  </button>
+  <button class="tab-btn" data-tab="reports" onclick="switchTab('reports')">
+    &#9734; Tax Reports
+  </button>
+  <button class="tab-btn" data-tab="clients" onclick="switchTab('clients')">
+    &#9782; Clients
+  </button>
+  <button class="tab-btn" data-tab="billing" onclick="switchTab('billing')">
+    &#9728; Plan &amp; Billing
+  </button>
+  <button class="tab-btn admin-only" data-tab="admin" onclick="switchTab('admin')" style="display:none;">
+    &#9881; Admin
+  </button>
+  <button class="tab-btn admin-only" data-tab="audit" onclick="switchTab('audit')" style="display:none;">
+    &#9782; Audit Log
+  </button>
+  <button class="tab-btn admin-only" data-tab="metrics" onclick="switchTab('metrics')" style="display:none;">
+    &#9650; Metrics
+  </button>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- DASHBOARD TAB -->
+  <div id="tab-dashboard" class="tab-panel active">
+    <div id="dash-hero" class="card" style="margin-bottom:20px;background:linear-gradient(135deg,rgba(59,130,246,0.08),rgba(139,92,246,0.05));border-color:rgba(59,130,246,0.2);">
+      <div style="font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Your portfolio today</div>
+      <div style="font-size:32px;font-weight:700;letter-spacing:-0.5px;" id="dash-hero-value">--</div>
+      <div style="font-size:14px;margin-top:6px;line-height:1.5;" id="dash-hero-story">Loading your portfolio story&hellip;</div>
+    </div>
+
+    <div class="metrics-grid" id="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-label">What it&rsquo;s worth</div>
+        <div class="metric-value neutral" id="m-total-value">--</div>
+        <div class="metric-sub" id="m-total-sub">Loading...</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Up or down
+          <span class="tip" tabindex="0" data-tip="Total unrealized gain or loss — the gap between what you paid and what it's worth now. Unrealized means you haven't sold, so there's no tax impact.">?</span>
+        </div>
+        <div class="metric-value neutral" id="m-gain-loss">--</div>
+        <div class="metric-sub" id="m-gain-pct">since you started</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Stocks you hold</div>
+        <div class="metric-value neutral" id="m-positions">--</div>
+        <div class="metric-sub" id="m-positions-sub">active positions</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Cash waiting
+          <span class="tip" tabindex="0" data-tip="Uninvested cash from dividends, recent sales, and harvests. Use the Rebalancing tab to put it back to work on your target weights.">?</span>
+        </div>
+        <div class="metric-value neutral" id="m-cash">--</div>
+        <div class="metric-sub" id="m-cash-sub">uninvested</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:20px;">
+      <div class="card-title">What to do next</div>
+      <div id="dash-next-body" style="font-size:13px;line-height:1.6;color:var(--muted);">Checking your portfolio&hellip;</div>
+    </div>
+
+    <div class="dashboard-grid">
+      <div>
+        <div class="card">
+          <div class="card-title">Sector Allocation</div>
+          <div class="chart-container">
+            <canvas id="sector-chart"></canvas>
+          </div>
+          <div class="sector-legend" id="sector-legend"></div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:20px;">
+        <div class="card">
+          <div class="card-title">Top Movers Today</div>
+          <div class="movers-grid" id="movers-grid">
+            <div>
+              <div style="font-size:12px;color:var(--success);font-weight:600;margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em;">Top Gainers</div>
+              <div id="gainers-list"></div>
+            </div>
+            <div>
+              <div style="font-size:12px;color:var(--danger);font-weight:600;margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em;">Top Losers</div>
+              <div id="losers-list"></div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Portfolio Composition</div>
+          <div id="composition-stats" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- POSITIONS TAB -->
+  <div id="tab-positions" class="tab-panel">
+    <div class="section-header">
+      <div class="section-title">Holdings</div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <input class="search-input" id="pos-search" type="text" placeholder="Search symbol or sector..." oninput="filterPositions(this.value)"/>
+        <select id="pos-sector-filter" class="search-input" style="min-width:160px;" onchange="filterPositions(document.getElementById('pos-search').value)">
+          <option value="">All Sectors</option>
+        </select>
+      </div>
+    </div>
+    <div class="card">
+      <div class="table-wrap">
+        <table id="positions-table">
+          <thead>
+            <tr>
+              <th onclick="sortPositions('symbol')">Symbol</th>
+              <th>Name</th>
+              <th>Sector</th>
+              <th onclick="sortPositions('shares')" class="td-right">Shares</th>
+              <th onclick="sortPositions('avg_cost_basis')" class="td-right">Avg Cost</th>
+              <th onclick="sortPositions('current_price')" class="td-right">Price</th>
+              <th onclick="sortPositions('market_value')" class="td-right">Mkt Value</th>
+              <th onclick="sortPositions('unrealized_gain_loss')" class="td-right">Unrealized P&L</th>
+              <th onclick="sortPositions('unrealized_gain_loss_pct')" class="td-right">P&L %</th>
+              <th onclick="sortPositions('actual_weight')" class="td-right">Weight</th>
+              <th onclick="sortPositions('change_percent')" class="td-right">Today</th>
+            </tr>
+          </thead>
+          <tbody id="positions-tbody">
+            <tr><td colspan="11" style="text-align:center;padding:40px;color:var(--muted);">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAX LOSS TAB -->
+  <div id="tab-taxloss" class="tab-panel">
+    <div class="section-header">
+      <div class="section-title">Tax-Loss Harvesting Opportunities
+        <span class="tip" tabindex="0" data-tip="Tax-loss harvesting means selling positions at a loss to offset capital gains elsewhere in your return. You can deduct up to $3,000 of net capital loss against ordinary income each year; the rest carries forward.">?</span>
+      </div>
+    </div>
+    <div class="tax-summary" id="tax-summary">
+      <div class="metric-card">
+        <div class="metric-label">Total Harvestable Loss</div>
+        <div class="metric-value negative" id="tl-total-loss">--</div>
+        <div class="metric-sub">unrealized losses</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Est. Tax Savings</div>
+        <div class="metric-value" style="color:var(--success);" id="tl-tax-savings">--</div>
+        <div class="metric-sub">at 20% capital gains rate</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Opportunities</div>
+        <div class="metric-value neutral" id="tl-count">--</div>
+        <div class="metric-sub">positions below threshold</div>
+      </div>
+    </div>
+    <div id="harvest-cards">
+      <div class="empty-state">
+        <div class="empty-icon">&#10003;</div>
+        <h3>Loading opportunities...</h3>
+        <p>Scanning your portfolio for tax-loss harvesting candidates</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ESG TAB -->
+  <div id="tab-esg" class="tab-panel">
+    <div class="section-header">
+      <div class="section-title">ESG Analysis &amp; Exclusions</div>
+    </div>
+    <div class="esg-grid">
+      <div>
+        <div class="esg-score-card">
+          <div class="esg-label">Portfolio ESG Score</div>
+          <div class="esg-grade-big" id="esg-grade">--</div>
+          <div class="esg-score-num" id="esg-score">--</div>
+          <div class="esg-label">out of 100</div>
+          <div class="esg-concerns mt-4" id="esg-concerns"></div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:16px;">
+        <div class="card">
+          <div class="card-title">Add ESG Exclusion</div>
+          <div class="exclusion-form">
+            <div class="form-row">
+              <div class="form-group" style="min-width:100px;max-width:140px;">
+                <label>Type</label>
+                <select id="exc-type">
+                  <option value="SECTOR">Sector</option>
+                  <option value="SYMBOL">Symbol</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Value</label>
+                <input id="exc-value" type="text" placeholder="e.g. Energy or XOM"/>
+              </div>
+              <div class="form-group">
+                <label>Reason (optional)</label>
+                <input id="exc-reason" type="text" placeholder="ESG concerns..."/>
+              </div>
+              <button class="btn btn-primary" onclick="submitAddExclusion()" style="align-self:flex-end;">Add</button>
+            </div>
+          </div>
+          <div class="card-title">Active Exclusions</div>
+          <div id="exclusion-list">
+            <div class="text-muted text-sm">No exclusions set</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Sector ESG Ratings</div>
+          <div class="esg-sector-grid" id="esg-sector-grid"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- REBALANCING TAB -->
+  <div id="tab-rebalancing" class="tab-panel">
+    <div class="section-header">
+      <div class="section-title">Portfolio Rebalancing</div>
+      <button class="btn btn-primary" id="rebal-execute-btn" onclick="executeRebalancing()" style="display:none;">
+        Execute All Trades
+      </button>
+    </div>
+    <div class="rebal-summary" id="rebal-summary">
+      <div class="metric-card">
+        <div class="metric-label">Total Drift</div>
+        <div class="metric-value neutral" id="rebal-drift">--</div>
+        <div class="metric-sub">sum of absolute deviations</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Trades Needed</div>
+        <div class="metric-value neutral" id="rebal-trades">--</div>
+        <div class="metric-sub">positions to rebalance</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Portfolio Value</div>
+        <div class="metric-value neutral" id="rebal-value">--</div>
+        <div class="metric-sub">current market value</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Cash Available</div>
+        <div class="metric-value neutral" id="rebal-cash">--</div>
+        <div class="metric-sub">for buys</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Symbol</th>
+              <th>Name</th>
+              <th>Sector</th>
+              <th>Action</th>
+              <th class="td-right">Current %</th>
+              <th class="td-right">Target %</th>
+              <th class="td-right">Drift</th>
+              <th style="min-width:140px;">Drift Bar</th>
+              <th class="td-right">Shares</th>
+              <th class="td-right">Est. Value</th>
+            </tr>
+          </thead>
+          <tbody id="rebal-tbody">
+            <tr><td colspan="10" style="text-align:center;padding:40px;color:var(--muted);">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TRANSACTIONS TAB -->
+  <div id="tab-transactions" class="tab-panel">
+    <div class="section-header">
+      <div class="section-title">Transaction History</div>
+      <div id="txn-count" class="text-muted text-sm"></div>
+    </div>
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Symbol</th>
+              <th>Type</th>
+              <th class="td-right">Shares</th>
+              <th class="td-right">Price</th>
+              <th class="td-right">Total Value</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody id="txn-tbody">
+            <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--muted);">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- BACKTESTING TAB -->
+  <div id="tab-backtest" class="tab-panel">
+    <div class="section-header">
+      <div class="section-title">Backtesting</div>
+    </div>
+
+    <!-- Config card -->
+    <div class="card" style="margin-bottom:20px;">
+      <div style="display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;margin-top:4px;">
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <label class="form-label">Index</label>
+          <select id="bt-index" class="form-input" style="width:130px;">
+            <option value="sp500">S&amp;P 500</option>
+            <option value="nasdaq">NASDAQ 100</option>
+          </select>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <label class="form-label" style="white-space:nowrap;">Initial Investment ($)</label>
+          <input type="text" id="bt-investment" class="form-input" value="100,000"
+                 placeholder="e.g. 250,000" style="width:140px;"
+                 oninput="this.value=this.value.replace(/[^0-9,]/g,'')"
+                 onblur="this.value=Number(this.value.replace(/,/g,'')).toLocaleString('en-US')"
+                 onfocus="this.value=this.value.replace(/,/g,'')"/>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <label class="form-label" style="white-space:nowrap;">Tax Rate (%)</label>
+          <input type="number" id="bt-taxrate" class="form-input" value="37" min="0" max="60" step="1" style="width:90px;"/>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <label class="form-label" style="white-space:nowrap;">TLH Threshold (%)</label>
+          <input type="number" id="bt-threshold" class="form-input" value="5" min="1" max="30" step="1" style="width:100px;"/>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;padding-bottom:2px;">
+          <input type="checkbox" id="bt-tlh" checked style="width:16px;height:16px;accent-color:var(--primary);cursor:pointer;"/>
+          <label for="bt-tlh" style="font-size:13px;color:var(--text);cursor:pointer;white-space:nowrap;">Simulate TLH</label>
+        </div>
+        <div style="padding-bottom:2px;">
+          <button class="btn btn-primary" onclick="runBacktest()" id="bt-run-btn">
+            &#9654; Run Backtest
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Results (hidden until run) -->
+    <div id="bt-results" style="display:none;">
+      <!-- Summary hero cards -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;">
+        <div class="metric-card">
+          <div class="metric-label">Direct index final</div>
+          <div id="bt-hero-port" style="font-size:28px;font-weight:700;color:var(--success);letter-spacing:-0.5px;">--</div>
+          <div id="bt-hero-port-pct" style="font-size:13px;color:var(--success);margin-top:2px;">--</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label" id="bt-hero-bench-label">S&amp;P 500 buy &amp; hold</div>
+          <div id="bt-hero-bench" style="font-size:28px;font-weight:700;color:var(--success);letter-spacing:-0.5px;">--</div>
+          <div id="bt-hero-bench-pct" style="font-size:13px;color:var(--success);margin-top:2px;">--</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">TLH advantage</div>
+          <div id="bt-hero-tlh" style="font-size:28px;font-weight:700;color:var(--success);letter-spacing:-0.5px;">--</div>
+          <div style="font-size:13px;color:var(--muted);margin-top:2px;">extra vs index</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Total tax saved</div>
+          <div id="bt-hero-tax" style="font-size:28px;font-weight:700;color:var(--success);letter-spacing:-0.5px;">--</div>
+          <div style="font-size:13px;color:var(--muted);margin-top:2px;">reinvested capital</div>
+        </div>
+      </div>
+      <!-- Metric cards -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:20px;">
+        <div class="metric-card">
+          <div class="metric-label">Portfolio Return</div>
+          <div class="metric-value" id="bt-port-total">--</div>
+          <div class="metric-sub" id="bt-port-ann">--</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">SPY Return</div>
+          <div class="metric-value" id="bt-spy-total">--</div>
+          <div class="metric-sub" id="bt-spy-ann">--</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Alpha vs SPY</div>
+          <div class="metric-value" id="bt-alpha">--</div>
+          <div class="metric-sub">annualized</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Tax Alpha</div>
+          <div class="metric-value" id="bt-tax-alpha">--</div>
+          <div class="metric-sub" id="bt-tax-savings">--</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Sharpe Ratio</div>
+          <div class="metric-value neutral" id="bt-sharpe">--</div>
+          <div class="metric-sub">vs 4.5% risk-free</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Max Drawdown</div>
+          <div class="metric-value" id="bt-drawdown">--</div>
+          <div class="metric-sub" id="bt-spy-drawdown">--</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Volatility</div>
+          <div class="metric-value neutral" id="bt-vol">--</div>
+          <div class="metric-sub">annualized</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Harvests</div>
+          <div class="metric-value neutral" id="bt-harvests">--</div>
+          <div class="metric-sub" id="bt-years">--</div>
+        </div>
+      </div>
+
+      <!-- Chart -->
+      <div class="card" style="margin-bottom:20px;">
+        <div class="card-title">Portfolio vs SPY (Indexed to 100) <span style="font-size:11px;color:var(--warning);font-weight:400;">★ Historical backtest using real adjusted-close prices</span></div>
+        <div style="position:relative;height:320px;margin-top:12px;">
+          <canvas id="bt-chart"></canvas>
+        </div>
+      </div>
+
+      <!-- Harvest events -->
+      <div class="card" id="bt-harvest-card">
+        <div class="card-title">Tax-Loss Harvest Events</div>
+        <div class="table-wrap" style="margin-top:12px;">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Sold</th>
+                <th>Replacement</th>
+                <th>Realized Loss</th>
+                <th>Tax Savings (20%)</th>
+              </tr>
+            </thead>
+            <tbody id="bt-harvest-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div id="bt-empty" style="text-align:center;padding:60px;color:var(--muted);">
+      Configure parameters above and click <strong style="color:var(--text);">Run Backtest</strong> to simulate historical performance.
+    </div>
+  </div>
+
+  <!-- LOTS & SELL TAB -->
+  <div id="tab-lots" class="tab-panel">
+    <div class="section-header">
+      <div class="section-title">Open Tax Lots
+        <span class="tip" tabindex="0" data-tip="A tax lot is a batch of shares bought at a single price on a single date. The IRS taxes each lot separately based on its cost basis and holding period, so tracking them individually is how you get accurate gain/loss and wash-sale treatment.">?</span>
+      </div>
+      <div class="text-muted text-sm" id="lots-count"></div>
+    </div>
+    <div class="card" style="margin-bottom:16px;">
+      <div class="text-muted text-sm" style="margin-bottom:10px;">
+        Select lots from a single position below and click <strong style="color:var(--text);">Sell Selected</strong>
+        for <strong>Spec-ID sale<span class="tip" tabindex="0" data-tip="Specific identification (Spec-ID) lets you pick exact lots to sell instead of defaulting to FIFO. Required in writing at time of sale per IRS rules, but it gives you the best tax control — highest-basis lots first maximizes harvested losses.">?</span></strong>.
+        The sale price defaults to the current market quote unless you override it.
+      </div>
+      <div class="form-row" style="margin-top:0;">
+        <div class="form-group" style="max-width:160px;">
+          <label>Override price ($, optional)</label>
+          <input id="sell-override-price" type="number" step="0.01" placeholder="live quote"/>
+        </div>
+        <button class="btn btn-danger" onclick="submitSpecIdSell()" id="sell-selected-btn" disabled>
+          Sell Selected Lots
+        </button>
+        <div class="text-muted text-sm ml-auto" id="sell-selected-info">No lots selected</div>
+      </div>
+    </div>
+    <div id="lots-by-position">
+      <div class="empty-state"><div class="empty-icon">&#9744;</div><h3>Loading lots...</h3></div>
+    </div>
+  </div>
+
+  <!-- IMPORT TAB -->
+  <div id="tab-import" class="tab-panel">
+    <div class="section-header">
+      <div class="section-title">Import Tax Lots from Broker CSV</div>
+    </div>
+    <div class="card" style="margin-bottom:16px;">
+      <div class="text-muted text-sm" style="margin-bottom:10px;">
+        Upload a Schwab or Fidelity cost-basis CSV export. The importer auto-detects the format
+        and parses symbol, date acquired, shares, and cost per share. Preview first, then commit.
+      </div>
+      <div class="form-row" style="margin-top:0;">
+        <div class="form-group">
+          <label>CSV file</label>
+          <input id="import-file" type="file" accept=".csv"/>
+        </div>
+        <div class="form-group" style="max-width:200px;">
+          <label style="display:flex;gap:6px;align-items:center;">
+            <input id="import-overwrite" type="checkbox" style="width:14px;height:14px;accent-color:var(--primary);"/>
+            <span>Overwrite existing</span>
+          </label>
+        </div>
+        <button class="btn btn-ghost" onclick="previewImport()">Preview</button>
+        <button class="btn btn-primary" onclick="commitImport()">Commit Import</button>
+      </div>
+    </div>
+    <div id="import-result" class="card" style="display:none;">
+      <div class="card-title">Preview</div>
+      <div id="import-summary" class="text-muted text-sm mb-4"></div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Symbol</th>
+              <th>Date Acquired</th>
+              <th class="td-right">Shares</th>
+              <th class="td-right">Cost/Share</th>
+              <th class="td-right">Total Cost</th>
+            </tr>
+          </thead>
+          <tbody id="import-preview-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI ADVISOR TAB -->
+  <div id="tab-advisor" class="tab-panel">
+    <div class="section-header">
+      <div class="section-title">AI Tax-Loss Harvest Advisor
+        <span class="tip" tabindex="0" data-tip="Claude analyzes your portfolio, picks specific lots to harvest, verifies wash-sale status, and proposes replacements from a curated block list (never substantially identical). Every run is logged for SEC reconstruction. Output is a draft — no trades execute automatically.">?</span>
+      </div>
+      <div id="advisor-mode-badge" class="text-sm text-muted"></div>
+    </div>
+    <div class="card" style="margin-bottom:16px;">
+      <div class="text-muted text-sm" style="margin-bottom:10px;">
+        Claude (opus-4-5) analyzes your portfolio, identifies harvesting opportunities, checks wash-sale risk,
+        and drafts a full trade plan. Runs as an autonomous tool-use loop. Demo mode activates if ANTHROPIC_API_KEY is unset.
+      </div>
+      <div class="form-row" style="margin-top:0;">
+        <div class="form-group" style="flex:2;">
+          <label>Instruction</label>
+          <input id="advisor-instruction" type="text"
+                 value="Identify the best tax-loss harvesting opportunities and draft a trade plan."/>
+        </div>
+        <div class="form-group" style="max-width:100px;">
+          <label>ST rate</label>
+          <input id="advisor-st" type="number" step="0.01" value="0.37"/>
+        </div>
+        <div class="form-group" style="max-width:100px;">
+          <label>LT rate</label>
+          <input id="advisor-lt" type="number" step="0.01" value="0.20"/>
+        </div>
+        <button class="btn btn-primary" onclick="runAdvisor()" id="advisor-run-btn">
+          &#9654; Run Advisor
+        </button>
+      </div>
+    </div>
+    <div id="advisor-output"></div>
+  </div>
+
+  <!-- TRADE PLANS TAB -->
+  <div id="tab-plans" class="tab-panel">
+    <div class="section-header">
+      <div class="section-title">Trade Plans</div>
+      <button class="btn btn-ghost btn-sm" onclick="loadPlans()">Refresh</button>
+    </div>
+    <div class="text-muted text-sm" style="margin-bottom:14px;">
+      Draft plans from the AI Advisor appear here. Review items, approve, download a broker-ready CSV,
+      execute at your own broker, then re-upload the resulting lot CSV to reconcile.
+    </div>
+    <div id="plans-list"></div>
+  </div>
+
+  <!-- TAX REPORTS TAB -->
+  <div id="tab-reports" class="tab-panel">
+    <div class="section-header">
+      <div class="section-title">Realized Gains &amp; Schedule D Export
+        <span class="tip" tabindex="0" data-tip="Schedule D reports capital gains and losses on your Form 1040. Form 8949 is the detail schedule — one row per lot sold. Use the CSV/PDF here as a drop-in worksheet for your tax prep, then reconcile against the 1099-B from your broker before filing.">?</span>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-primary btn-sm" onclick="downloadTaxReport()">
+          &#8595; CSV
+        </button>
+        <button class="btn btn-primary btn-sm" onclick="downloadTaxReportPdf()">
+          &#8595; PDF
+        </button>
+        <button class="btn btn-ghost btn-sm" onclick="downloadForm8949()">
+          &#8595; Form 8949 CSV
+        </button>
+      </div>
+    </div>
+    <div class="metrics-grid" style="grid-template-columns:repeat(4,1fr);">
+      <div class="metric-card">
+        <div class="metric-label">Short-term Net</div>
+        <div class="metric-value neutral" id="rg-st-net">--</div>
+        <div class="metric-sub" id="rg-st-sub"></div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Long-term Net</div>
+        <div class="metric-value neutral" id="rg-lt-net">--</div>
+        <div class="metric-sub" id="rg-lt-sub"></div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Wash-sale Disallowed</div>
+        <div class="metric-value neutral" id="rg-wash">--</div>
+        <div class="metric-sub">deferred into replacements</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Total Net</div>
+        <div class="metric-value neutral" id="rg-total">--</div>
+        <div class="metric-sub">recognizable this year</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Symbol</th>
+              <th>Acquired</th>
+              <th>Sold</th>
+              <th class="td-right">Proceeds</th>
+              <th class="td-right">Cost Basis</th>
+              <th class="td-right">Gain/Loss</th>
+              <th class="td-right">Wash Sale</th>
+              <th>Term</th>
+            </tr>
+          </thead>
+          <tbody id="rg-tbody">
+            <tr><td colspan="8" style="text-align:center;padding:40px;color:var(--muted);">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- CLIENTS TAB -->
+  <div id="tab-clients" class="tab-panel">
+    <div class="section-header">
+      <div class="section-title">Client Management</div>
+    </div>
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-title">Add Client</div>
+      <div class="form-row" style="margin-top:0;">
+        <div class="form-group"><label>Name</label><input id="cl-name" type="text" placeholder="Jane Doe"/></div>
+        <div class="form-group"><label>Email</label><input id="cl-email" type="email" placeholder="jane@example.com"/></div>
+        <div class="form-group" style="max-width:100px;">
+          <label>ST rate</label><input id="cl-st" type="number" step="0.01" value="0.37"/>
+        </div>
+        <div class="form-group" style="max-width:100px;">
+          <label>LT rate</label><input id="cl-lt" type="number" step="0.01" value="0.20"/>
+        </div>
+        <button class="btn btn-primary" onclick="submitCreateClient()">Add Client</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Clients</div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Email</th>
+              <th class="td-right">ST Rate</th>
+              <th class="td-right">LT Rate</th>
+              <th>Created</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="clients-tbody">
+            <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--muted);">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- AUDIT LOG TAB (admin only) -->
+  <div id="tab-audit" class="tab-panel">
+    <div class="section-header">
+      <div class="section-title">Audit Log &amp; Compliance Export
+        <span class="tip" tabindex="0" data-tip="Every user-impacting action (sell, harvest, plan approval, kill-switch flip, ACK acceptance, corp action, dividend sweep) is appended here. Bundles with AI recommendations and transactions into the exam export JSON required by SEC Rule 204-2.">?</span>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:14px;">
+      <div class="form-row" style="margin-top:0;">
+        <div class="form-group" style="max-width:180px;"><label>Start (ISO)</label><input id="audit-start" type="date"/></div>
+        <div class="form-group" style="max-width:180px;"><label>End (ISO)</label><input id="audit-end" type="date"/></div>
+        <div class="form-group" style="max-width:140px;"><label>User ID (optional)</label><input id="audit-user" type="number" placeholder="all"/></div>
+        <button class="btn btn-primary" onclick="loadAudit()">Load</button>
+        <button class="btn btn-ghost" onclick="downloadAuditJson()">Download JSON</button>
+      </div>
+    </div>
+
+    <div class="metrics-grid" style="grid-template-columns:repeat(3,1fr);">
+      <div class="metric-card">
+        <div class="metric-label">Audit events</div>
+        <div class="metric-value neutral" id="audit-count-events">--</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Recommendations</div>
+        <div class="metric-value neutral" id="audit-count-recs">--</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Transactions</div>
+        <div class="metric-value neutral" id="audit-count-txns">--</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+      <div class="card-title">Events</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>When (UTC)</th><th>Event</th><th>User</th><th>Portfolio</th>
+            <th>Object</th><th>IP</th><th>Details</th>
+          </tr></thead>
+          <tbody id="audit-tbody">
+            <tr><td colspan="7" style="text-align:center;padding:30px;color:var(--muted);">Pick a date range and click Load.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+      <div class="card-title">AI Recommendations (RecommendationLog)</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>When (UTC)</th><th>User</th><th>Portfolio</th><th>Demo?</th>
+            <th>Model</th><th>Prompt (excerpt)</th>
+          </tr></thead>
+          <tbody id="audit-recs-tbody">
+            <tr><td colspan="6" style="text-align:center;padding:30px;color:var(--muted);">Pick a date range and click Load.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- BILLING TAB -->
+  <div id="tab-billing" class="tab-panel">
+    <div class="section-header">
+      <div class="section-title">Plan &amp; Billing
+        <span class="tip" tabindex="0" data-tip="Subscription is managed in Stripe. Your trial is 14 days; cancel anytime. At a 37% marginal tax rate, harvesting just $8K of losses in a year saves ~$2,960 — more than pays for Premium for 2.5 years.">?</span>
+      </div>
+    </div>
+
+    <div id="billing-current" class="card" style="margin-bottom:16px;display:none;">
+      <div class="card-title">Your subscription</div>
+      <div id="billing-current-body"></div>
+    </div>
+
+    <div id="billing-setup-notice" class="card" style="margin-bottom:16px;display:none;background:rgba(245,158,11,0.08);border-color:rgba(245,158,11,0.25);">
+      <div style="font-size:13px;color:var(--warning);">
+        Billing is not configured yet. Set <code>STRIPE_SECRET_KEY</code> + price IDs in <code>.env</code> and restart to enable subscriptions.
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:center;align-items:center;gap:12px;margin-bottom:18px;">
+      <span id="bc-monthly-lbl" style="font-weight:600;">Monthly</span>
+      <label style="display:inline-flex;align-items:center;cursor:pointer;">
+        <input type="checkbox" id="bc-annual-toggle" onchange="renderPricing()" style="width:18px;height:18px;accent-color:var(--primary);"/>
+      </label>
+      <span id="bc-annual-lbl" style="color:var(--muted);">Annual <span style="color:var(--success);font-size:11px;font-weight:700;margin-left:4px;">SAVE 20%</span></span>
+    </div>
+
+    <div id="pricing-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
+      <!-- populated by renderPricing() -->
+    </div>
+
+    <div class="card" style="margin-top:20px;">
+      <div class="card-title">Invoices</div>
+      <div id="invoices-body" class="text-muted text-sm">Load your Stripe invoices below.</div>
+      <button class="btn btn-ghost btn-sm mt-3" onclick="loadInvoices()">Load invoices</button>
+    </div>
+
+    <div class="card" style="margin-top:14px;">
+      <div class="card-title">Manage subscription</div>
+      <div class="text-muted text-sm" style="margin-bottom:10px;">
+        Update your payment method, download past invoices, or cancel via the Stripe customer portal.
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="openBillingPortal()">Open billing portal</button>
+    </div>
+  </div>
+
+  <!-- METRICS TAB (admin only) -->
+  <div id="tab-metrics" class="tab-panel">
+    <div class="section-header">
+      <div class="section-title">Founder Metrics
+        <span class="tip" tabindex="0" data-tip="Live counters straight from the DB. MRR is an estimate — the canonical number lives in the Stripe dashboard.">?</span>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="loadMetrics()">Refresh</button>
+    </div>
+    <div id="metrics-grid-body">
+      <div class="text-muted text-sm">Click Refresh to load metrics.</div>
+    </div>
+  </div>
+
+  <!-- ADMIN TAB (admin only) -->
+  <div id="tab-admin" class="tab-panel">
+    <div class="section-header">
+      <div class="section-title">Admin Console</div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-title">Create User</div>
+      <div class="form-row" style="margin-top:0;">
+        <div class="form-group"><label>Email</label><input id="u-email" type="email" placeholder="user@firm.com"/></div>
+        <div class="form-group"><label>Full name</label><input id="u-name" type="text" placeholder="John Smith"/></div>
+        <div class="form-group"><label>Password</label><input id="u-password" type="password" placeholder="••••••••"/></div>
+        <div class="form-group" style="max-width:130px;">
+          <label>Role</label>
+          <select id="u-role">
+            <option value="advisor">advisor</option>
+            <option value="admin">admin</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" onclick="submitCreateUser()">Create User</button>
+      </div>
+      <div class="table-wrap mt-4">
+        <table>
+          <thead>
+            <tr><th>ID</th><th>Email</th><th>Name</th><th>Role</th><th>Active</th><th>Created</th></tr>
+          </thead>
+          <tbody id="users-tbody">
+            <tr><td colspan="6" style="text-align:center;padding:20px;color:var(--muted);">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-title">Corporate Actions — Apply Split</div>
+      <div class="text-muted text-sm" style="margin-bottom:10px;">
+        Applies to all active positions across all portfolios. 2-for-1 split = old_rate 1, new_rate 2.
+      </div>
+      <div class="form-row" style="margin-top:0;">
+        <div class="form-group" style="max-width:120px;"><label>Symbol</label><input id="ca-symbol" type="text" placeholder="AAPL"/></div>
+        <div class="form-group" style="max-width:100px;"><label>Old rate</label><input id="ca-old" type="number" step="any" value="1"/></div>
+        <div class="form-group" style="max-width:100px;"><label>New rate</label><input id="ca-new" type="number" step="any" value="2"/></div>
+        <div class="form-group"><label>Ex-date (ISO, optional)</label><input id="ca-ex" type="text" placeholder="2026-04-19"/></div>
+        <div class="form-group"><label>Notes</label><input id="ca-notes" type="text" placeholder="2:1 split"/></div>
+        <button class="btn btn-warning" onclick="submitCorpAction()">Apply Split</button>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-title">Admin Two-Factor Authentication
+        <span class="tip" tabindex="0" data-tip="TOTP — 6-digit codes from an authenticator app (Google Authenticator, 1Password, Authy). Required by SEC Rule 206(4)-7 for any staff with access to client data. Once enabled, admin login requires a fresh code in addition to your password.">?</span>
+      </div>
+      <div id="mfa-status" class="text-muted text-sm">Checking status&hellip;</div>
+      <div id="mfa-enroll-body" style="display:none;margin-top:12px;">
+        <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start;">
+          <div id="mfa-qr" style="background:#fff;padding:10px;border-radius:var(--radius-sm);"></div>
+          <div style="flex:1;min-width:280px;">
+            <div class="text-muted text-sm" style="margin-bottom:6px;">Scan this QR with Google Authenticator, 1Password, or Authy.</div>
+            <div class="text-muted text-sm" style="margin-bottom:10px;">Or enter the key manually:</div>
+            <div style="font-family:monospace;font-size:14px;background:var(--surface2);padding:8px 12px;border-radius:var(--radius-sm);word-break:break-all;" id="mfa-secret"></div>
+            <div class="form-row" style="margin-top:12px;">
+              <div class="form-group" style="max-width:180px;"><label>Confirmation code</label><input id="mfa-code" type="text" maxlength="6" placeholder="123456"/></div>
+              <button class="btn btn-success" onclick="mfaConfirm()">Enable 2FA</button>
+              <button class="btn btn-ghost" onclick="mfaCancel()">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="mfa-disable-body" style="display:none;margin-top:12px;">
+        <div class="text-muted text-sm" style="margin-bottom:8px;">To disable 2FA, enter a current 6-digit code:</div>
+        <div class="form-row" style="margin-top:0;">
+          <div class="form-group" style="max-width:180px;"><input id="mfa-disable-code" type="text" maxlength="6" placeholder="123456"/></div>
+          <button class="btn btn-danger" onclick="mfaDisable()">Disable 2FA</button>
+        </div>
+      </div>
+      <div id="mfa-actions" style="margin-top:10px;">
+        <button class="btn btn-primary btn-sm" onclick="mfaStartEnroll()" id="mfa-enroll-btn">Enable 2FA</button>
+        <button class="btn btn-ghost btn-sm" onclick="mfaShowDisable()" id="mfa-disable-btn" style="display:none;">Disable 2FA</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Dividend Sweep</div>
+      <div class="text-muted text-sm" style="margin-bottom:10px;">
+        Fetch dividends for every position and credit each portfolio&rsquo;s cash.
+        Also runs daily at 06:30 UTC. Idempotent — already-applied dividends are skipped.
+      </div>
+      <div class="form-row" style="margin-top:0;">
+        <div class="form-group" style="max-width:140px;"><label>Lookback days</label><input id="div-lookback" type="number" min="1" max="365" value="7"/></div>
+        <button class="btn btn-success" onclick="runDividendSweep()">Run Dividend Sweep</button>
+      </div>
+      <div id="div-output" class="mt-4"></div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<script>
+const BASE = 'http://localhost:8000/api';
+const TOKEN_KEY = 'di_token';
+
+// ---- AUTH HELPERS ----
+function getToken() { return localStorage.getItem(TOKEN_KEY); }
+function setToken(t) { localStorage.setItem(TOKEN_KEY, t); }
+function clearToken() { localStorage.removeItem(TOKEN_KEY); }
+
+function showLoginScreen(msg) {
+  const overlay = document.getElementById('login-overlay');
+  overlay.style.display = 'flex';
+  const err = document.getElementById('login-error');
+  if (msg) { err.textContent = msg; err.style.display = 'block'; }
+  else { err.style.display = 'none'; }
+  document.getElementById('logout-btn').style.display = 'none';
+}
+
+function hideLoginScreen() {
+  document.getElementById('login-overlay').style.display = 'none';
+  document.getElementById('logout-btn').style.display = '';
+}
+
+async function handleLogin(e) {
+  e.preventDefault();
+  const btn = document.getElementById('login-btn');
+  btn.disabled = true; btn.textContent = 'Signing in…';
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  try {
+    const body = new URLSearchParams({ username: email, password });
+    const r = await fetch(BASE + '/auth/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body,
+    });
+    if (!r.ok) { const t = await r.text(); throw new Error(t || 'Invalid credentials'); }
+    const data = await r.json();
+    setToken(data.access_token);
+    hideLoginScreen();
+    await init();
+  } catch(err) {
+    const el = document.getElementById('login-error');
+    el.textContent = 'Invalid email or password.';
+    el.style.display = 'block';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Sign in';
+  }
+}
+
+function logout() {
+  clearToken();
+  // Reset app state
+  state.portfolioId = null;
+  state.portfolios = [];
+  document.getElementById('portfolio-select').innerHTML = '<option value="">Loading...</option>';
+  showLoginScreen();
+}
+
+const api = {
+  async request(method, path, body) {
+    const token = getToken();
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const opts = { method, headers };
+    if (body) opts.body = JSON.stringify(body);
+    const r = await fetch(BASE + path, opts);
+    if (r.status === 401) {
+      clearToken();
+      showLoginScreen('Session expired. Please sign in again.');
+      throw new Error('Unauthorized');
+    }
+    if (!r.ok) {
+      const txt = await r.text();
+      throw new Error(txt || r.statusText);
+    }
+    return r.json();
+  },
+  listPortfolios: () => api.request('GET', '/portfolios'),
+  createPortfolio: (data) => api.request('POST', '/portfolios', data),
+  getPortfolio: (id) => api.request('GET', `/portfolios/${id}`),
+  constructPortfolio: (id, data) => api.request('POST', `/portfolios/${id}/construct`, data),
+  getSectors: (id) => api.request('GET', `/portfolios/${id}/sectors`),
+  getTransactions: (id) => api.request('GET', `/portfolios/${id}/transactions`),
+  getTaxLoss: (id) => api.request('GET', `/portfolios/${id}/tax-loss`),
+  harvest: (id, posId) => api.request('POST', `/portfolios/${id}/tax-loss/${posId}/harvest`),
+  getESG: (id) => api.request('GET', `/portfolios/${id}/esg`),
+  getExclusions: (id) => api.request('GET', `/portfolios/${id}/esg/exclusions`),
+  addExclusion: (id, data) => api.request('POST', `/portfolios/${id}/esg/exclusions`, data),
+  removeExclusion: (id, excId) => api.request('DELETE', `/portfolios/${id}/esg/exclusions/${excId}`),
+  getRebalancing: (id) => api.request('GET', `/portfolios/${id}/rebalancing`),
+  executeRebalancing: (id) => api.request('POST', `/portfolios/${id}/rebalancing/execute`),
+  runBacktest: (id, data) => api.request('POST', `/portfolios/${id}/backtest`, data),
+  getConstituents: () => api.request('GET', '/market/constituents'),
+  getMarketSectors: () => api.request('GET', '/market/sectors'),
+  // Auth
+  me: () => api.request('GET', '/auth/me'),
+  // Lots / spec-ID sell
+  getTaxLots: (id) => api.request('GET', `/portfolios/${id}/tax-lots`),
+  getPositionLots: (id, posId) => api.request('GET', `/portfolios/${id}/positions/${posId}/lots`),
+  sellLots: (id, posId, data) => api.request('POST', `/portfolios/${id}/positions/${posId}/sell`, data),
+  // Realized gains / tax report
+  getRealizedGains: (id) => api.request('GET', `/portfolios/${id}/realized-gains`),
+  // Harvest agent + TLH primitives
+  harvestAgent: (id, data) => api.request('POST', `/portfolios/${id}/harvest-agent`, data),
+  tlhLosses: (id) => api.request('GET', `/portfolios/${id}/tlh/losses`),
+  tlhSimulate: (id, data) => api.request('POST', `/portfolios/${id}/tlh/simulate`, data),
+  // Clients
+  listClients: () => api.request('GET', '/clients'),
+  createClient: (data) => api.request('POST', '/clients', data),
+  updateClient: (id, data) => api.request('PATCH', `/clients/${id}`, data),
+  // Users (admin only)
+  listUsers: () => api.request('GET', '/users'),
+  createUser: (data) => api.request('POST', '/users', data),
+  // Corporate actions (admin only)
+  applySplit: (data) => api.request('POST', '/admin/corporate-actions/process', data),
+  // Dividends (admin only)
+  processDividends: (lookback) => api.request('POST', `/admin/dividends/process?lookback_days=${lookback}`),
+  // Signup + acknowledgements
+  signupIndividual: (data) => fetch(BASE + '/signup/individual', {
+    method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data),
+  }).then(async r => { if (!r.ok) throw new Error(await r.text()); return r.json(); }),
+  requiredAcks: () => api.request('GET', '/acknowledgements/required'),
+  postAck: (data) => api.request('POST', '/acknowledgements', data),
+  // Trade plans
+  listPlans: (id) => api.request('GET', `/portfolios/${id}/trade-plans`),
+  createPlan: (id, data) => api.request('POST', `/portfolios/${id}/trade-plans`, data),
+  getPlan: (id, planId) => api.request('GET', `/portfolios/${id}/trade-plans/${planId}`),
+  approvePlan: (id, planId) => api.request('POST', `/portfolios/${id}/trade-plans/${planId}/approve`),
+  cancelPlan: (id, planId) => api.request('POST', `/portfolios/${id}/trade-plans/${planId}/cancel`),
+  markExecuted: (id, planId, notes) => api.request('POST', `/portfolios/${id}/trade-plans/${planId}/mark-executed`, {notes: notes||''}),
+  // Billing (M8)
+  billingStatus: () => api.request('GET', '/billing/status'),
+  billingCheckout: (data) => api.request('POST', '/billing/checkout', data),
+  billingPortal: (data) => api.request('POST', '/billing/portal', data),
+  billingInvoices: () => api.request('GET', '/billing/invoices'),
+};
+
+async function uploadFile(path, formData) {
+  const token = getToken();
+  const headers = {};
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  const r = await fetch(BASE + path, { method: 'POST', headers, body: formData });
+  if (r.status === 401) { clearToken(); showLoginScreen('Session expired.'); throw new Error('Unauthorized'); }
+  if (!r.ok) { const t = await r.text(); throw new Error(t || r.statusText); }
+  return r.json();
+}
+
+function downloadWithAuth(path, filename) {
+  const token = getToken();
+  return fetch(BASE + path, { headers: { Authorization: `Bearer ${token}` } })
+    .then(r => { if (!r.ok) throw new Error('Download failed'); return r.blob(); })
+    .then(blob => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = filename; a.click();
+      URL.revokeObjectURL(url);
+    });
+}
+
+// STATE
+let state = {
+  portfolioId: null,
+  portfolios: [],
+  currentTab: 'dashboard',
+  sectorChart: null,
+  portfolioData: null,
+  positionsAll: [],
+  positionsSortKey: 'market_value',
+  positionsSortDir: 'desc',
+  currentUser: null,
+  selectedLots: new Set(),
+  selectedLotsPositionId: null,
+  importPreview: null,
+};
+
+const SECTOR_COLORS = {
+  'Technology': '#3b82f6',
+  'Financials': '#8b5cf6',
+  'Health Care': '#10b981',
+  'Consumer Discretionary': '#f59e0b',
+  'Communication Services': '#06b6d4',
+  'Consumer Staples': '#84cc16',
+  'Energy': '#ef4444',
+  'Industrials': '#f97316',
+  'Materials': '#a855f7',
+  'Real Estate': '#ec4899',
+  'Utilities': '#64748b',
+};
+function sectorColor(s) { return SECTOR_COLORS[s] || '#94a3b8'; }
+
+// ---- FORMAT HELPERS ----
+function fmt$(n) {
+  return '$' + (n || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+}
+function fmtK(n) {
+  const abs = Math.abs(n || 0);
+  if (abs >= 1e6) return (n < 0 ? '-' : '') + '$' + (abs/1e6).toFixed(2) + 'M';
+  if (abs >= 1e3) return (n < 0 ? '-' : '') + '$' + (abs/1e3).toFixed(1) + 'K';
+  return fmt$(n);
+}
+function fmtPct(n) {
+  const v = (n || 0).toFixed(2);
+  return (n >= 0 ? '+' : '') + v + '%';
+}
+function fmtNum(n, dec=2) { return (n || 0).toLocaleString('en-US', {minimumFractionDigits: dec, maximumFractionDigits: dec}); }
+function fmtShares(n) { return (n || 0).toLocaleString('en-US', {minimumFractionDigits: 4, maximumFractionDigits: 4}); }
+function fmtDate(s) {
+  if (!s) return '';
+  const d = new Date(s);
+  return d.toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit'});
+}
+function fmtDateShort(s) {
+  if (!s) return '';
+  const d = new Date(s);
+  return d.toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'});
+}
+function signClass(n) { return n >= 0 ? 'td-positive' : 'td-negative'; }
+
+// ---- TOAST ----
+function toast(msg, type = 'success') {
+  const icons = { success: '&#10003;', error: '&#10007;', info: 'ℹ', warning: '&#9888;' };
+  const el = document.createElement('div');
+  el.className = `toast toast-${type}`;
+  el.innerHTML = `<div class="toast-icon">${icons[type] || icons.info}</div><div class="toast-msg">${msg}</div>`;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => el.remove(), 5000);
+}
+
+// ---- LOADING ----
+function setLoading(show) {
+  document.getElementById('loading-overlay').classList.toggle('show', show);
+}
+
+// ---- TABS ----
+function switchTab(tab) {
+  state.currentTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-' + tab));
+  if (state.portfolioId) loadCurrentTab();
+}
+
+function loadCurrentTab() {
+  const needsPortfolio = ['dashboard','positions','taxloss','esg','rebalancing','transactions','backtest','lots','import','advisor','reports','plans'];
+  if (needsPortfolio.includes(state.currentTab) && !state.portfolioId) return;
+  const loaders = {
+    dashboard: loadDashboard,
+    positions: loadPositions,
+    taxloss: loadTaxLoss,
+    esg: loadESG,
+    rebalancing: loadRebalancing,
+    transactions: loadTransactions,
+    backtest: () => Promise.resolve(),
+    lots: loadLots,
+    import: () => Promise.resolve(),
+    advisor: loadAdvisor,
+    plans: loadPlans,
+    reports: loadReports,
+    clients: loadClients,
+    admin: loadAdmin,
+    audit: async () => { /* user clicks Load */ },
+    billing: loadBilling,
+    metrics: loadMetrics,
+  };
+  const fn = loaders[state.currentTab];
+  if (fn) fn().catch(e => toast(e.message, 'error'));
+}
+
+// ---- PORTFOLIO SELECTOR ----
+async function loadPortfolios() {
+  try {
+    state.portfolios = await api.listPortfolios();
+  } catch(e) {
+    toast('Cannot connect to backend. Make sure the server is running on port 8000.', 'error');
+    state.portfolios = [];
+  }
+  const sel = document.getElementById('portfolio-select');
+  sel.innerHTML = '';
+  if (state.portfolios.length === 0) {
+    sel.innerHTML = '<option value="">No portfolios</option>';
+    showCreateModal();
+    return;
+  }
+  state.portfolios.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.id;
+    opt.textContent = p.name + ' (' + fmtK(p.initial_value) + ')';
+    sel.appendChild(opt);
+  });
+  if (!state.portfolioId || !state.portfolios.find(p => p.id == state.portfolioId)) {
+    selectPortfolio(state.portfolios[0].id);
+    sel.value = state.portfolios[0].id;
+  } else {
+    sel.value = state.portfolioId;
+  }
+}
+
+function onPortfolioChange(id) {
+  if (!id) return;
+  selectPortfolio(parseInt(id));
+}
+
+function selectPortfolio(id) {
+  state.portfolioId = id;
+  loadCurrentTab();
+}
+
+// ---- DASHBOARD ----
+async function loadDashboard() {
+  const [data, sectors] = await Promise.all([
+    api.getPortfolio(state.portfolioId),
+    api.getSectors(state.portfolioId),
+  ]);
+  state.portfolioData = data;
+  renderMetricCards(data);
+  renderDashHero(data);
+  renderNextAction(data);
+  renderSectorChart(sectors);
+  renderTopMovers(data.positions);
+  renderCompositionStats(data, sectors);
+}
+
+function renderDashHero(data) {
+  const tv = data.total_value || 0;
+  const gl = data.total_gain_loss || 0;
+  const glp = data.total_gain_loss_pct || 0;
+  document.getElementById('dash-hero-value').textContent = fmtK(tv);
+
+  let story;
+  if (tv === 0) {
+    story = 'Waiting for your first portfolio. Create one to begin.';
+  } else if (gl === 0) {
+    story = "You're flat since day one — no gain, no loss to harvest yet.";
+  } else if (gl > 0) {
+    story = `You're up <strong style="color:var(--success);">${fmtK(gl)}</strong> (${fmtPct(glp)}) since you started. Gains are <strong>unrealized</strong> — no tax until you sell.`;
+  } else {
+    story = `You're down <strong style="color:var(--danger);">${fmtK(gl)}</strong> (${fmtPct(glp)}). That's a tax-loss harvesting opportunity — check the <a href="#" onclick="switchTab('advisor');return false;" style="color:var(--primary);">AI Advisor</a>.`;
+  }
+  document.getElementById('dash-hero-story').innerHTML = story;
+}
+
+function renderNextAction(data) {
+  const el = document.getElementById('dash-next-body');
+  if (!el) return;
+  const tv = data.total_value || 0;
+  const gl = data.total_gain_loss || 0;
+  const cash = data.portfolio ? data.portfolio.cash : 0;
+  const cashPct = tv > 0 ? cash / tv : 0;
+
+  const actions = [];
+
+  // Missing email verification
+  if (state.currentUser && !state.currentUser.email_verified && state.currentUser.role === 'individual') {
+    actions.push(`<strong>Verify your email</strong> — check your inbox for the link, or <a href="#" onclick="resendVerification();return false;" style="color:var(--primary);">resend it</a>. Required before you can approve real trades.`);
+  }
+  // Material loss — push to advisor
+  if (gl < -500) {
+    actions.push(`<strong>Scan for harvestable losses.</strong> You have <span class="td-negative">${fmtK(gl)}</span> of unrealized loss — at a 37% tax bracket that's roughly <span class="td-positive">${fmtK(Math.abs(gl) * 0.37)}</span> in potential tax savings. Open the <a href="#" onclick="switchTab('advisor');return false;" style="color:var(--primary);">AI Advisor</a>.`);
+  }
+  // Large cash drag
+  if (cashPct > 0.03 && tv > 0) {
+    actions.push(`<strong>Put your cash back to work.</strong> ${(cashPct * 100).toFixed(1)}% of your portfolio is sitting in cash — <a href="#" onclick="switchTab('rebalancing');return false;" style="color:var(--primary);">rebalance</a> to restore your target weights.`);
+  }
+  // Nothing pressing
+  if (actions.length === 0) {
+    actions.push('Nothing to do right now. Check back after a market move — harvesting opportunities come from price drops in individual positions.');
+  }
+  el.innerHTML = actions.map(a => `<div style="margin-bottom:8px;">• ${a}</div>`).join('');
+}
+
+function renderMetricCards(data) {
+  const tv = data.total_value || 0;
+  const gl = data.total_gain_loss || 0;
+  const glp = data.total_gain_loss_pct || 0;
+  const n = (data.positions || []).length;
+  const cash = data.portfolio ? data.portfolio.cash : 0;
+  const initial = data.portfolio ? data.portfolio.initial_value : 0;
+
+  document.getElementById('m-total-value').textContent = fmtK(tv);
+  document.getElementById('m-total-value').className = 'metric-value neutral';
+  document.getElementById('m-total-sub').textContent = 'Initial: ' + fmtK(initial);
+
+  const glEl = document.getElementById('m-gain-loss');
+  glEl.textContent = (gl >= 0 ? '+' : '') + fmtK(gl);
+  glEl.className = 'metric-value ' + (gl >= 0 ? 'positive' : 'negative');
+  document.getElementById('m-gain-pct').textContent = fmtPct(glp) + ' return';
+
+  document.getElementById('m-positions').textContent = n;
+  document.getElementById('m-positions-sub').textContent = 'active holdings';
+
+  const cashPct = tv > 0 ? (cash / tv * 100).toFixed(1) : '0.0';
+  document.getElementById('m-cash').textContent = fmtK(cash);
+  document.getElementById('m-cash-sub').textContent = cashPct + '% of portfolio';
+}
+
+function renderSectorChart(sectors) {
+  if (state.sectorChart) {
+    state.sectorChart.destroy();
+    state.sectorChart = null;
+  }
+  const canvas = document.getElementById('sector-chart');
+  if (!sectors || sectors.length === 0) {
+    canvas.parentElement.innerHTML = '<div class="empty-state"><div class="empty-icon">&#9678;</div><h3>No data</h3><p>Construct a portfolio first</p></div>';
+    return;
+  }
+  const labels = sectors.map(s => s.sector);
+  const data = sectors.map(s => s.value);
+  const colors = sectors.map(s => sectorColor(s.sector));
+
+  state.sectorChart = new Chart(canvas, {
+    type: 'doughnut',
+    data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth: 2, borderColor: '#1e293b', hoverBorderWidth: 0 }] },
+    options: {
+      cutout: '65%',
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => ' ' + ctx.label + ': ' + (ctx.parsed / sectors.reduce((a,s)=>a+s.value,0) * 100).toFixed(1) + '%'
+          }
+        }
+      },
+      animation: { duration: 400 },
+    }
+  });
+
+  const totalVal = sectors.reduce((a,s) => a+s.value, 0);
+  const legendEl = document.getElementById('sector-legend');
+  legendEl.innerHTML = sectors.slice(0, 8).map(s => `
+    <div class="sector-legend-item">
+      <div class="sector-dot" style="background:${sectorColor(s.sector)}"></div>
+      <div class="sector-legend-label">${s.sector}</div>
+      <div class="sector-legend-pct">${(s.value / totalVal * 100).toFixed(1)}%</div>
+    </div>
+  `).join('');
+}
+
+function renderTopMovers(positions) {
+  if (!positions || positions.length === 0) {
+    document.getElementById('gainers-list').innerHTML = '<div class="text-muted text-sm">No data</div>';
+    document.getElementById('losers-list').innerHTML = '<div class="text-muted text-sm">No data</div>';
+    return;
+  }
+  const sorted = [...positions].sort((a,b) => (b.change_percent||0) - (a.change_percent||0));
+  const gainers = sorted.filter(p => (p.change_percent||0) >= 0).slice(0, 5);
+  const losers = sorted.filter(p => (p.change_percent||0) < 0).slice(-5).reverse();
+
+  function moverHtml(list, positive) {
+    if (!list.length) return '<div class="text-muted text-sm">None</div>';
+    return list.map(p => `
+      <div class="mover-item">
+        <div>
+          <div class="mover-symbol">${p.symbol}</div>
+          <div class="mover-name">${(p.name||'').substring(0,22)}</div>
+        </div>
+        <div class="mover-pct" style="color:${positive ? 'var(--success)' : 'var(--danger)'}">${fmtPct(p.change_percent||0)}</div>
+      </div>
+    `).join('');
+  }
+
+  document.getElementById('gainers-list').innerHTML = moverHtml(gainers, true);
+  document.getElementById('losers-list').innerHTML = moverHtml(losers, false);
+}
+
+function renderCompositionStats(data, sectors) {
+  const positions = data.positions || [];
+  const sectors_count = sectors ? sectors.length : 0;
+  const topSector = sectors && sectors[0] ? sectors[0].sector : '--';
+  const biggestPos = positions.length ? [...positions].sort((a,b) => b.market_value - a.market_value)[0] : null;
+  const avgGl = positions.length ? positions.reduce((a,p)=>a+(p.unrealized_gain_loss_pct||0), 0) / positions.length : 0;
+
+  document.getElementById('composition-stats').innerHTML = `
+    <div>
+      <div class="metric-label">Sectors</div>
+      <div style="font-size:20px;font-weight:700;">${sectors_count}</div>
+      <div class="metric-sub">diversified</div>
+    </div>
+    <div>
+      <div class="metric-label">Largest Sector</div>
+      <div style="font-size:16px;font-weight:700;">${topSector}</div>
+    </div>
+    <div>
+      <div class="metric-label">Largest Position</div>
+      <div style="font-size:16px;font-weight:700;">${biggestPos ? biggestPos.symbol : '--'}</div>
+      <div class="metric-sub">${biggestPos ? fmt$(biggestPos.market_value) : ''}</div>
+    </div>
+    <div>
+      <div class="metric-label">Avg P&L</div>
+      <div style="font-size:16px;font-weight:700;" class="${avgGl >= 0 ? 'td-positive' : 'td-negative'}">${fmtPct(avgGl)}</div>
+    </div>
+  `;
+}
+
+// ---- POSITIONS ----
+async function loadPositions() {
+  const data = await api.getPortfolio(state.portfolioId);
+  state.positionsAll = data.positions || [];
+  // populate sector filter
+  const sectors = [...new Set(state.positionsAll.map(p => p.sector).filter(Boolean))].sort();
+  const sf = document.getElementById('pos-sector-filter');
+  sf.innerHTML = '<option value="">All Sectors</option>' + sectors.map(s => `<option value="${s}">${s}</option>`).join('');
+  renderPositionsTable(state.positionsAll);
+}
+
+function filterPositions(searchVal) {
+  const sectorFilter = document.getElementById('pos-sector-filter').value;
+  const q = (searchVal || '').toLowerCase();
+  let filtered = state.positionsAll;
+  if (q) filtered = filtered.filter(p => p.symbol.toLowerCase().includes(q) || (p.name||'').toLowerCase().includes(q) || (p.sector||'').toLowerCase().includes(q));
+  if (sectorFilter) filtered = filtered.filter(p => p.sector === sectorFilter);
+  renderPositionsTable(filtered);
+}
+
+function sortPositions(key) {
+  if (state.positionsSortKey === key) {
+    state.positionsSortDir = state.positionsSortDir === 'asc' ? 'desc' : 'asc';
+  } else {
+    state.positionsSortKey = key;
+    state.positionsSortDir = 'desc';
+  }
+  const q = document.getElementById('pos-search').value;
+  filterPositions(q);
+}
+
+function renderPositionsTable(positions) {
+  const key = state.positionsSortKey;
+  const dir = state.positionsSortDir;
+  const sorted = [...positions].sort((a,b) => {
+    const av = a[key] ?? 0;
+    const bv = b[key] ?? 0;
+    if (typeof av === 'string') return dir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+    return dir === 'asc' ? av - bv : bv - av;
+  });
+
+  // Update sort headers
+  document.querySelectorAll('#tab-positions th').forEach(th => {
+    th.classList.remove('sort-asc', 'sort-desc');
+    const onclick = th.getAttribute('onclick') || '';
+    const m = onclick.match(/sortPositions\('(.+?)'\)/);
+    if (m && m[1] === key) th.classList.add(dir === 'asc' ? 'sort-asc' : 'sort-desc');
+  });
+
+  const tbody = document.getElementById('positions-tbody');
+  if (!sorted.length) {
+    tbody.innerHTML = `<tr><td colspan="11"><div class="empty-state"><div class="empty-icon">&#9670;</div><h3>No positions found</h3><p>Adjust your search filter</p></div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = sorted.map(p => {
+    const glClass = signClass(p.unrealized_gain_loss);
+    const todayClass = signClass(p.change_percent);
+    return `
+      <tr>
+        <td class="td-symbol">${p.symbol}</td>
+        <td class="td-name">${p.name || ''}</td>
+        <td>
+          <span style="display:inline-flex;align-items:center;gap:5px;">
+            <span style="width:8px;height:8px;border-radius:50%;background:${sectorColor(p.sector)};display:inline-block;flex-shrink:0;"></span>
+            <span style="font-size:12px;color:var(--muted);">${p.sector || ''}</span>
+          </span>
+        </td>
+        <td class="td-right">${fmtShares(p.shares)}</td>
+        <td class="td-right">${fmt$(p.avg_cost_basis)}</td>
+        <td class="td-right">${fmt$(p.current_price)}</td>
+        <td class="td-right font-bold">${fmt$(p.market_value)}</td>
+        <td class="td-right ${glClass}">${p.unrealized_gain_loss >= 0 ? '+' : ''}${fmt$(p.unrealized_gain_loss)}</td>
+        <td class="td-right ${glClass}">${fmtPct(p.unrealized_gain_loss_pct)}</td>
+        <td class="td-right">${(p.actual_weight * 100).toFixed(2)}%</td>
+        <td class="td-right ${todayClass}">${fmtPct(p.change_percent || 0)}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+// ---- TAX LOSS ----
+async function loadTaxLoss() {
+  const data = await api.getTaxLoss(state.portfolioId);
+  renderTaxLoss(data);
+}
+
+function renderTaxLoss(data) {
+  const total = data.total_harvestable_loss || 0;
+  const savings = data.estimated_total_tax_savings || 0;
+  const opps = data.opportunities || [];
+
+  document.getElementById('tl-total-loss').textContent = fmtK(total);
+  document.getElementById('tl-tax-savings').textContent = fmtK(savings);
+  document.getElementById('tl-count').textContent = opps.length;
+
+  const container = document.getElementById('harvest-cards');
+
+  if (!opps.length) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">&#10003;</div>
+        <h3>No harvesting opportunities</h3>
+        <p>All positions are within the 5% loss threshold. Check back after market movements.</p>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = opps.map(opp => {
+    const replacements = (opp.replacement_candidates || []).map(s => `<span class="replacement-tag">${s}</span>`).join('');
+    return `
+      <div class="harvest-card">
+        <div class="harvest-card-header">
+          <div>
+            <div style="font-size:16px;font-weight:700;">${opp.symbol}
+              <span style="font-size:13px;color:var(--muted);font-weight:400;"> &bull; ${opp.sector}</span>
+            </div>
+            <div style="font-size:13px;color:var(--muted);margin-top:2px;">${opp.name || ''}</div>
+          </div>
+          <button class="btn btn-danger btn-sm" onclick="executeHarvest(${opp.position_id})">
+            Harvest Loss
+          </button>
+        </div>
+        <div class="harvest-meta">
+          <div class="harvest-meta-item">
+            <div class="label">Loss Amount</div>
+            <div class="value td-negative">${fmt$(opp.loss_amount)}</div>
+          </div>
+          <div class="harvest-meta-item">
+            <div class="label">Loss %</div>
+            <div class="value td-negative">${opp.loss_percent.toFixed(2)}%</div>
+          </div>
+          <div class="harvest-meta-item">
+            <div class="label">Est. Tax Savings</div>
+            <div class="value" style="color:var(--success);">${fmt$(opp.estimated_tax_savings)}</div>
+          </div>
+          <div class="harvest-meta-item">
+            <div class="label">Cost Basis</div>
+            <div class="value">${fmt$(opp.cost_basis)}</div>
+          </div>
+          <div class="harvest-meta-item">
+            <div class="label">Current Price</div>
+            <div class="value">${fmt$(opp.current_price)}</div>
+          </div>
+          <div class="harvest-meta-item">
+            <div class="label">Shares</div>
+            <div class="value">${fmtNum(opp.shares, 4)}</div>
+          </div>
+        </div>
+        ${replacements ? `
+        <div class="replacements">
+          <span style="font-size:11px;color:var(--muted);">Swap candidates:</span>
+          ${replacements}
+        </div>` : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+async function executeHarvest(positionId) {
+  if (!confirm('Confirm tax-loss harvest? This will sell the position and return cash to the portfolio.')) return;
+  setLoading(true);
+  try {
+    const result = await api.harvest(state.portfolioId, positionId);
+    const loss = result.realized_loss || 0;
+    const savings = result.estimated_tax_savings || 0;
+    toast(`Harvested ${result.symbol}: ${fmt$(loss)} loss realized, ~${fmt$(savings)} est. tax savings`, 'success');
+    await loadTaxLoss();
+  } catch(e) {
+    toast(e.message, 'error');
+  }
+  setLoading(false);
+}
+
+// ---- ESG ----
+async function loadESG() {
+  const [analysis, exclusions] = await Promise.all([
+    api.getESG(state.portfolioId),
+    api.getExclusions(state.portfolioId),
+  ]);
+  renderESGDashboard(analysis, exclusions);
+}
+
+function gradeClass(grade) {
+  const map = { 'A': 'grade-A', 'B+': 'grade-Bplus', 'B': 'grade-B', 'B-': 'grade-Bminus', 'C+': 'grade-Cplus', 'C': 'grade-C', 'D': 'grade-D' };
+  return map[grade] || 'grade-C';
+}
+
+function renderESGDashboard(analysis, exclusions) {
+  const grade = analysis.esg_grade || '--';
+  const score = analysis.portfolio_esg_score || 0;
+  const concerns = analysis.top_concerns || [];
+
+  const gradeEl = document.getElementById('esg-grade');
+  gradeEl.textContent = grade;
+  gradeEl.className = 'esg-grade-big ' + gradeClass(grade);
+  document.getElementById('esg-score').textContent = score.toFixed(1) + ' / 100';
+
+  document.getElementById('esg-concerns').innerHTML = `
+    <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Key Concerns</div>
+    ${concerns.map(c => `<span class="concern-tag">${c}</span>`).join('')}
+  `;
+
+  // Sector ratings grid
+  const sectorRatings = analysis.sector_ratings || {};
+  document.getElementById('esg-sector-grid').innerHTML = Object.entries(sectorRatings).map(([sector, rating]) => `
+    <div class="esg-sector-item">
+      <div class="esg-sector-name">${sector}</div>
+      <div class="esg-sector-grade ${gradeClass(rating.grade)}">${rating.grade}</div>
+      <div class="esg-sector-score">${rating.score}/100</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:4px;">${(rating.concerns||[]).join(', ')}</div>
+    </div>
+  `).join('');
+
+  // Exclusions list
+  renderExclusionList(exclusions);
+}
+
+function renderExclusionList(exclusions) {
+  const listEl = document.getElementById('exclusion-list');
+  if (!exclusions || exclusions.length === 0) {
+    listEl.innerHTML = '<div class="text-muted text-sm" style="padding:10px 0;">No exclusions set. Add sector or symbol exclusions above.</div>';
+    return;
+  }
+  listEl.innerHTML = `
+    <div class="exclusion-list">
+      ${exclusions.map(e => `
+        <div class="exclusion-item">
+          <div class="exclusion-info">
+            <span class="exclusion-type-badge exclusion-type-${e.type.toLowerCase()}">${e.type}</span>
+            <span style="font-weight:600;">${e.value}</span>
+            ${e.reason ? `<span class="text-muted text-sm">&mdash; ${e.reason}</span>` : ''}
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="removeExclusionItem(${e.id})">Remove</button>
+        </div>
+      `).join('')}
+    </div>`;
+}
+
+async function submitAddExclusion() {
+  const type = document.getElementById('exc-type').value;
+  const value = document.getElementById('exc-value').value.trim();
+  const reason = document.getElementById('exc-reason').value.trim();
+  if (!value) { toast('Please enter a value', 'warning'); return; }
+  setLoading(true);
+  try {
+    await api.addExclusion(state.portfolioId, { exclusion_type: type, value, reason: reason || null });
+    document.getElementById('exc-value').value = '';
+    document.getElementById('exc-reason').value = '';
+    toast('Exclusion added', 'success');
+    await loadESG();
+  } catch(e) {
+    toast(e.message, 'error');
+  }
+  setLoading(false);
+}
+
+async function removeExclusionItem(excId) {
+  setLoading(true);
+  try {
+    await api.removeExclusion(state.portfolioId, excId);
+    toast('Exclusion removed', 'success');
+    await loadESG();
+  } catch(e) {
+    toast(e.message, 'error');
+  }
+  setLoading(false);
+}
+
+// ---- REBALANCING ----
+async function loadRebalancing() {
+  const data = await api.getRebalancing(state.portfolioId);
+  renderRebalancing(data);
+}
+
+function renderRebalancing(data) {
+  document.getElementById('rebal-drift').textContent = (data.total_drift || 0).toFixed(2) + '%';
+  document.getElementById('rebal-trades').textContent = (data.trades || []).length;
+  document.getElementById('rebal-value').textContent = fmtK(data.portfolio_value || 0);
+  document.getElementById('rebal-cash').textContent = fmtK(data.cash_available || 0);
+
+  const execBtn = document.getElementById('rebal-execute-btn');
+  execBtn.style.display = data.needs_rebalancing ? 'inline-flex' : 'none';
+
+  const tbody = document.getElementById('rebal-tbody');
+  const trades = data.trades || [];
+
+  if (!trades.length) {
+    tbody.innerHTML = `<tr><td colspan="10">
+      <div class="empty-state">
+        <div class="empty-icon">&#10003;</div>
+        <h3>Portfolio is balanced</h3>
+        <p>All positions are within the ${data.rebalance_threshold_pct || 5}% drift threshold.</p>
+      </div>
+    </td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = trades.map(t => {
+    const driftAbs = Math.abs(t.drift);
+    const barWidth = Math.min(driftAbs / 10 * 100, 100);
+    const barClass = t.drift > 0 ? 'drift-pos' : 'drift-neg';
+    const actionClass = t.action === 'BUY' ? 'badge-buy' : 'badge-sell';
+    return `
+      <tr>
+        <td class="td-symbol">${t.symbol}</td>
+        <td class="td-name">${(t.name||'').substring(0,22)}</td>
+        <td><span style="font-size:12px;color:var(--muted);">${t.sector||''}</span></td>
+        <td><span class="badge ${actionClass}">${t.action}</span></td>
+        <td class="td-right">${t.current_weight.toFixed(2)}%</td>
+        <td class="td-right">${t.target_weight.toFixed(2)}%</td>
+        <td class="td-right ${t.drift > 0 ? 'td-negative' : 'td-positive'}">${t.drift > 0 ? '+' : ''}${t.drift.toFixed(2)}%</td>
+        <td>
+          <div class="drift-bar-wrap">
+            <div class="drift-bar-bg">
+              <div class="drift-bar-fill ${barClass}" style="width:${barWidth}%"></div>
+            </div>
+            <span class="drift-value text-sm">${driftAbs.toFixed(1)}%</span>
+          </div>
+        </td>
+        <td class="td-right">${fmtNum(t.shares_to_trade, 4)}</td>
+        <td class="td-right">${fmt$(t.estimated_value)}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+async function executeRebalancing() {
+  if (!confirm('Execute all rebalancing trades? This will buy and sell positions to restore target weights.')) return;
+  setLoading(true);
+  try {
+    const result = await api.executeRebalancing(state.portfolioId);
+    toast(`Executed ${result.trades_executed} rebalancing trades. New cash: ${fmt$(result.new_cash_balance)}`, 'success');
+    await loadRebalancing();
+  } catch(e) {
+    toast(e.message, 'error');
+  }
+  setLoading(false);
+}
+
+// ---- TRANSACTIONS ----
+async function loadTransactions() {
+  const txns = await api.getTransactions(state.portfolioId);
+  renderTransactions(txns);
+}
+
+function renderTransactions(txns) {
+  document.getElementById('txn-count').textContent = txns.length + ' transactions';
+  const tbody = document.getElementById('txn-tbody');
+  if (!txns.length) {
+    tbody.innerHTML = `<tr><td colspan="7">
+      <div class="empty-state">
+        <div class="empty-icon">&#9997;</div>
+        <h3>No transactions yet</h3>
+        <p>Transactions will appear here after portfolio construction.</p>
+      </div>
+    </td></tr>`;
+    return;
+  }
+  const typeClass = { BUY: 'badge-buy', SELL: 'badge-sell', HARVEST: 'badge-harvest' };
+  tbody.innerHTML = txns.map(t => `
+    <tr>
+      <td class="text-muted">${fmtDate(t.timestamp)}</td>
+      <td class="td-symbol">${t.symbol}</td>
+      <td><span class="badge ${typeClass[t.type] || 'badge-info'}">${t.type}</span></td>
+      <td class="td-right">${fmtNum(t.shares, 4)}</td>
+      <td class="td-right">${fmt$(t.price)}</td>
+      <td class="td-right font-bold">${fmt$(t.total_value)}</td>
+      <td class="text-muted text-sm">${t.notes || ''}</td>
+    </tr>
+  `).join('');
+}
+
+// ---- MODAL ----
+function showCreateModal() {
+  document.getElementById('create-modal').classList.add('open');
+  document.getElementById('modal-name').focus();
+}
+function hideCreateModal() {
+  document.getElementById('create-modal').classList.remove('open');
+}
+
+async function submitCreatePortfolio() {
+  const name = document.getElementById('modal-name').value.trim();
+  const val = parseFloat(document.getElementById('modal-value').value);
+  if (!name) { toast('Please enter a portfolio name', 'warning'); return; }
+  if (!val || val < 1000) { toast('Please enter a valid initial investment (min $1,000)', 'warning'); return; }
+  const checkboxes = document.querySelectorAll('#sector-checkboxes input[type="checkbox"]');
+  const excludedSectors = [...checkboxes].filter(c => c.checked).map(c => c.value);
+  await createAndConstructPortfolio(name, val, excludedSectors);
+}
+
+async function createAndConstructPortfolio(name, initialValue, excludedSectors) {
+  setLoading(true);
+  try {
+    const portfolio = await api.createPortfolio({ name, initial_value: initialValue });
+    toast('Portfolio created! Fetching prices and constructing positions...', 'info');
+    const result = await api.constructPortfolio(portfolio.id, {
+      excluded_sectors: excludedSectors,
+      excluded_symbols: [],
+    });
+    toast(`Portfolio constructed! ${result.positions_created} positions, ${fmt$(result.total_invested)} invested.`, 'success');
+    await loadPortfolios();
+    const sel = document.getElementById('portfolio-select');
+    sel.value = portfolio.id;
+    selectPortfolio(portfolio.id);
+    hideCreateModal();
+  } catch(e) {
+    toast(e.message, 'error');
+  }
+  setLoading(false);
+}
+
+// Close modal on overlay click
+document.getElementById('create-modal').addEventListener('click', function(e) {
+  if (e.target === this) hideCreateModal();
+});
+
+// ---- BACKTESTING ----
+let btChart = null;
+
+async function runBacktest() {
+  if (!state.portfolioId) { toast('Select a portfolio first', 'error'); return; }
+  const index = document.getElementById('bt-index').value;
+  const investment = parseFloat(document.getElementById('bt-investment').value.replace(/,/g, ''));
+  const taxRate = parseFloat(document.getElementById('bt-taxrate').value) / 100;
+  const tlhThreshold = parseFloat(document.getElementById('bt-threshold').value) / 100;
+  const tlh = document.getElementById('bt-tlh').checked;
+  const today = new Date().toISOString().split('T')[0];
+  const startDate = '2019-01-01';
+  const endDate = today;
+
+  if (!startDate || !endDate) { toast('Please select a date range', 'error'); return; }
+  if (endDate <= startDate) { toast('End date must be after start date', 'error'); return; }
+
+  const btn = document.getElementById('bt-run-btn');
+  btn.disabled = true;
+  btn.textContent = 'Running...';
+  setLoading(true);
+
+  try {
+    const result = await api.runBacktest(state.portfolioId, {
+      start_date: startDate,
+      end_date: endDate,
+      initial_investment: investment,
+      simulate_tlh: tlh,
+      tax_rate: taxRate,
+      tlh_threshold: tlhThreshold,
+      index: index,
+    });
+    renderBacktestResults(result);
+    document.getElementById('bt-results').style.display = 'block';
+    document.getElementById('bt-empty').style.display = 'none';
+  } catch(e) {
+    toast('Backtest failed: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '▶ Run Backtest';
+    setLoading(false);
+  }
+}
+
+function renderBacktestResults(data) {
+  const m = data.metrics;
+  const sign = v => v >= 0 ? 'td-positive' : 'td-negative';
+  const fmtK = v => { const a = Math.abs(v); const s = v < 0 ? '-' : (v > 0 ? '+' : ''); return s + '$' + (a >= 1000 ? (a/1000).toFixed(1) + 'K' : a.toFixed(0)); };
+
+  // Hero cards
+  const portFinal = data.portfolio_values.at(-1)?.value || 0;
+  const spyFinal  = data.spy_values.at(-1)?.value || 0;
+  const tlhAdv    = portFinal - spyFinal;
+  const benchLabel = document.getElementById('bt-index')?.value === 'nasdaq' ? 'NASDAQ 100 buy &amp; hold' : 'S&amp;P 500 buy &amp; hold';
+  document.getElementById('bt-hero-bench-label').innerHTML = benchLabel;
+  document.getElementById('bt-hero-port').textContent  = fmtK(portFinal).replace(/^\+/,'$').replace(/^-\$/,'-$');
+  document.getElementById('bt-hero-bench').textContent = fmtK(spyFinal).replace(/^\+/,'$').replace(/^-\$/,'-$');
+  document.getElementById('bt-hero-port-pct').textContent  = fmtPct(m.portfolio_total_return) + ' total';
+  document.getElementById('bt-hero-bench-pct').textContent = fmtPct(m.spy_total_return) + ' total';
+  document.getElementById('bt-hero-tlh').textContent  = fmtK(tlhAdv);
+  document.getElementById('bt-hero-tax').textContent  = fmtK(m.total_tax_savings);
+
+  // Color hero cards based on sign
+  document.getElementById('bt-hero-port').style.color  = portFinal >= 0 ? 'var(--success)' : 'var(--danger)';
+  document.getElementById('bt-hero-bench').style.color = spyFinal >= 0 ? 'var(--success)' : 'var(--danger)';
+  document.getElementById('bt-hero-tlh').style.color   = tlhAdv >= 0 ? 'var(--success)' : 'var(--danger)';
+  document.getElementById('bt-hero-tax').style.color   = 'var(--success)';
+
+  // Metric cards
+  document.getElementById('bt-port-total').innerHTML = `<span class="${sign(m.portfolio_total_return)}">${fmtPct(m.portfolio_total_return)}</span>`;
+  document.getElementById('bt-port-ann').textContent = fmtPct(m.portfolio_annualized_return) + ' annualized';
+  document.getElementById('bt-spy-total').innerHTML = `<span class="${sign(m.spy_total_return)}">${fmtPct(m.spy_total_return)}</span>`;
+  document.getElementById('bt-spy-ann').textContent = fmtPct(m.spy_annualized_return) + ' annualized';
+  document.getElementById('bt-alpha').innerHTML = `<span class="${sign(m.alpha)}">${fmtPct(m.alpha)}</span>`;
+  document.getElementById('bt-tax-alpha').innerHTML = `<span class="td-positive">+${m.tax_alpha.toFixed(2)}%</span>`;
+  document.getElementById('bt-tax-savings').textContent = fmt$(m.total_tax_savings) + ' saved';
+  document.getElementById('bt-sharpe').textContent = m.sharpe_ratio.toFixed(2);
+  document.getElementById('bt-drawdown').innerHTML = `<span class="td-negative">-${m.portfolio_max_drawdown.toFixed(2)}%</span>`;
+  document.getElementById('bt-spy-drawdown').textContent = `SPY: -${m.spy_max_drawdown.toFixed(2)}%`;
+  document.getElementById('bt-vol').textContent = m.annualized_volatility.toFixed(2) + '%';
+  document.getElementById('bt-harvests').textContent = m.harvest_count;
+  document.getElementById('bt-years').textContent = m.years + ' year period';
+
+  // Chart — indexed to 100
+  const labels = data.portfolio_values.map(v => v.date);
+  const portBase = data.portfolio_values[0]?.value || 1;
+  const spyBase = data.spy_values[0]?.value || 1;
+  const portIndexed = data.portfolio_values.map(v => (v.value / portBase * 100).toFixed(2));
+  const spyIndexed = data.spy_values.map(v => (v.value / spyBase * 100).toFixed(2));
+
+  if (btChart) btChart.destroy();
+  const ctx = document.getElementById('bt-chart').getContext('2d');
+  btChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Direct Index Portfolio',
+          data: portIndexed,
+          borderColor: '#3b82f6',
+          backgroundColor: 'rgba(59,130,246,0.08)',
+          borderWidth: 2,
+          pointRadius: 0,
+          fill: true,
+          tension: 0.3,
+        },
+        {
+          label: 'SPY (Benchmark)',
+          data: spyIndexed,
+          borderColor: '#94a3b8',
+          backgroundColor: 'transparent',
+          borderWidth: 2,
+          borderDash: [4, 4],
+          pointRadius: 0,
+          fill: false,
+          tension: 0.3,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { labels: { color: '#f1f5f9', font: { family: 'Inter' } } },
+        tooltip: {
+          backgroundColor: '#1e293b',
+          titleColor: '#94a3b8',
+          bodyColor: '#f1f5f9',
+          borderColor: '#334155',
+          borderWidth: 1,
+          callbacks: { label: ctx => ` ${ctx.dataset.label}: ${parseFloat(ctx.raw).toFixed(2)}` },
+        },
+      },
+      scales: {
+        x: {
+          ticks: { color: '#94a3b8', maxTicksLimit: 12, font: { family: 'Inter', size: 11 } },
+          grid: { color: '#1e293b' },
+        },
+        y: {
+          ticks: { color: '#94a3b8', font: { family: 'Inter', size: 11 }, callback: v => v.toFixed(0) },
+          grid: { color: '#334155' },
+        },
+      },
+    },
+  });
+
+  // Harvest events table
+  const tbody = document.getElementById('bt-harvest-tbody');
+  if (!data.harvest_events || data.harvest_events.length === 0) {
+    document.getElementById('bt-harvest-card').style.display = 'none';
+  } else {
+    document.getElementById('bt-harvest-card').style.display = 'block';
+    tbody.innerHTML = data.harvest_events.map(h => `
+      <tr>
+        <td>${h.date}</td>
+        <td><span class="badge badge-danger">${h.symbol}</span></td>
+        <td>${h.replacement ? `<span class="badge badge-success">${h.replacement}</span>` : '<span style="color:var(--muted)">—</span>'}</td>
+        <td class="td-negative">${fmt$(h.loss)}</td>
+        <td class="td-positive">+${fmt$(h.tax_saving)}</td>
+      </tr>
+    `).join('');
+  }
+}
+
+// ESC closes modal
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') hideCreateModal();
+});
+
+// Tab listener setup
+function setupTabListeners() {
+  // Already set via onclick on elements, nothing extra needed
+}
+
+// ============================================================
+// LOTS & SPEC-ID SELL
+// ============================================================
+async function loadLots() {
+  const lots = await api.getTaxLots(state.portfolioId);
+  renderLotsByPosition(lots);
+}
+
+function renderLotsByPosition(lots) {
+  document.getElementById('lots-count').textContent = `${lots.length} open lots`;
+  // Group by symbol (we don't have position_id in the tax-lots response, group by symbol)
+  const groups = {};
+  lots.forEach(l => {
+    const k = l.symbol;
+    if (!groups[k]) groups[k] = { symbol: l.symbol, sector: l.sector, lots: [] };
+    groups[k].lots.push(l);
+  });
+  const container = document.getElementById('lots-by-position');
+  if (!Object.keys(groups).length) {
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon">&#9744;</div><h3>No open lots</h3><p>Construct a portfolio or import CSV lots first.</p></div>`;
+    return;
+  }
+  // Need position_id to execute sell. Fetch from portfolio positions.
+  api.getPortfolio(state.portfolioId).then(data => {
+    const posBySymbol = {};
+    (data.positions || []).forEach(p => { posBySymbol[p.symbol] = p.id || p.position_id; });
+    // Fallback: try both names
+    container.innerHTML = Object.values(groups).map(g => {
+      const positionId = posBySymbol[g.symbol];
+      const rows = g.lots.map(l => {
+        const term = l.is_long_term ? '<span class="badge badge-success">LT</span>' : '<span class="badge badge-info">ST</span>';
+        return `
+          <tr>
+            <td><input type="checkbox" class="lot-chk" data-lot="${l.lot_id}" data-pos="${positionId}" onclick="toggleLotSelect(this)" style="width:14px;height:14px;accent-color:var(--primary);cursor:pointer;"/></td>
+            <td>${l.lot_id}</td>
+            <td class="td-right">${fmtShares(l.shares)}</td>
+            <td class="td-right">${fmt$(l.cost_basis_per_share)}</td>
+            <td>${fmtDateShort(l.purchase_date)}</td>
+            <td class="td-right">${l.holding_days}d</td>
+            <td>${term}</td>
+          </tr>`;
+      }).join('');
+      return `
+        <div class="card" style="margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+            <div><span class="td-symbol" style="font-size:16px;">${g.symbol}</span>
+              <span style="color:var(--muted);font-size:12px;margin-left:8px;">${g.sector || ''}</span></div>
+            <div class="text-muted text-sm">${g.lots.length} lots</div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th></th><th>Lot ID</th><th class="td-right">Shares</th>
+                  <th class="td-right">Cost/Share</th><th>Acquired</th>
+                  <th class="td-right">Holding</th>
+                  <th>Term<span class="tip" tabindex="0" data-tip="ST = short-term, held under 365 days, taxed at your ordinary income rate (up to 37%). LT = long-term, held 365+ days, taxed at the lower capital-gains rate (0%/15%/20%). Harvesting ST losses is more valuable per dollar because they offset higher-rate gains first.">?</span></th></tr>
+              </thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>
+        </div>`;
+    }).join('');
+  });
+}
+
+function toggleLotSelect(cb) {
+  const lotId = parseInt(cb.dataset.lot);
+  const posId = parseInt(cb.dataset.pos);
+  if (cb.checked) {
+    // Enforce single-position selection (Spec-ID sale is per-position)
+    if (state.selectedLotsPositionId && state.selectedLotsPositionId !== posId) {
+      cb.checked = false;
+      toast('Spec-ID sale is per-position. Clear existing selection first.', 'warning');
+      return;
+    }
+    state.selectedLots.add(lotId);
+    state.selectedLotsPositionId = posId;
+  } else {
+    state.selectedLots.delete(lotId);
+    if (!state.selectedLots.size) state.selectedLotsPositionId = null;
+  }
+  const count = state.selectedLots.size;
+  document.getElementById('sell-selected-info').textContent =
+    count ? `${count} lot(s) selected` : 'No lots selected';
+  document.getElementById('sell-selected-btn').disabled = !count;
+}
+
+async function submitSpecIdSell() {
+  const lotIds = [...state.selectedLots];
+  const posId = state.selectedLotsPositionId;
+  if (!lotIds.length || !posId) return;
+  const overrideRaw = document.getElementById('sell-override-price').value.trim();
+  const override = overrideRaw ? parseFloat(overrideRaw) : null;
+  if (!confirm(`Sell ${lotIds.length} lot(s) at ${override ? '$' + override : 'live price'}?`)) return;
+  setLoading(true);
+  try {
+    const r = await api.sellLots(state.portfolioId, posId, { lot_ids: lotIds, override_price: override });
+    const gl = r.economic_gain_loss;
+    toast(`Sold ${fmtShares(r.shares_sold)} ${r.symbol} @ ${fmt$(r.sale_price)} — ${gl>=0?'+':''}${fmt$(gl)} P&L`, gl>=0 ? 'success' : 'info');
+    state.selectedLots.clear();
+    state.selectedLotsPositionId = null;
+    document.getElementById('sell-override-price').value = '';
+    await loadLots();
+  } catch(e) {
+    toast(e.message, 'error');
+  }
+  setLoading(false);
+}
+
+// ============================================================
+// CSV IMPORT
+// ============================================================
+async function previewImport() {
+  const f = document.getElementById('import-file').files[0];
+  if (!f) { toast('Select a CSV file first', 'warning'); return; }
+  const fd = new FormData();
+  fd.append('file', f);
+  setLoading(true);
+  try {
+    const r = await uploadFile(`/portfolios/${state.portfolioId}/import/lots/preview`, fd);
+    state.importPreview = r;
+    renderImportPreview(r);
+  } catch(e) { toast(e.message, 'error'); }
+  setLoading(false);
+}
+
+async function commitImport() {
+  const f = document.getElementById('import-file').files[0];
+  if (!f) { toast('Select a CSV file first', 'warning'); return; }
+  if (!confirm('Commit import to database?')) return;
+  const fd = new FormData();
+  fd.append('file', f);
+  fd.append('overwrite_existing', document.getElementById('import-overwrite').checked ? 'true' : 'false');
+  setLoading(true);
+  try {
+    const r = await uploadFile(`/portfolios/${state.portfolioId}/import/lots`, fd);
+    toast(`Imported ${r.imported_lots} lots (${r.detected_format}) across ${r.symbols?.length || '?'} symbols`, 'success');
+  } catch(e) { toast(e.message, 'error'); }
+  setLoading(false);
+}
+
+function renderImportPreview(r) {
+  document.getElementById('import-result').style.display = 'block';
+  document.getElementById('import-summary').innerHTML =
+    `Format: <strong>${r.detected_format}</strong> — ${r.lot_count} lots across ${r.symbols.length} symbols (showing first ${r.preview.length})`;
+  const tbody = document.getElementById('import-preview-tbody');
+  tbody.innerHTML = r.preview.map(row => `
+    <tr>
+      <td class="td-symbol">${row.symbol}</td>
+      <td>${row.date_acquired}</td>
+      <td class="td-right">${fmtShares(row.shares)}</td>
+      <td class="td-right">${fmt$(row.cost_per_share)}</td>
+      <td class="td-right">${fmt$(row.total_cost)}</td>
+    </tr>`).join('');
+}
+
+// ============================================================
+// AI ADVISOR
+// ============================================================
+async function loadAdvisor() { /* render on-demand from runAdvisor */ }
+
+async function runAdvisor() {
+  const btn = document.getElementById('advisor-run-btn');
+  btn.disabled = true; btn.textContent = 'Thinking...';
+  setLoading(true);
+  try {
+    const body = {
+      instruction: document.getElementById('advisor-instruction').value || undefined,
+      tax_rate_short: parseFloat(document.getElementById('advisor-st').value) || 0.37,
+      tax_rate_long: parseFloat(document.getElementById('advisor-lt').value) || 0.20,
+    };
+    const r = await api.harvestAgent(state.portfolioId, body);
+    document.getElementById('advisor-output').dataset.lastResult = JSON.stringify(r);
+    renderAdvisorOutput(r);
+  } catch(e) { toast(e.message, 'error'); }
+  btn.disabled = false; btn.textContent = '▶ Run Advisor';
+  setLoading(false);
+}
+
+function renderAdvisorOutput(r) {
+  const mode = r.demo_mode ? 'Demo mode (no ANTHROPIC_API_KEY)' : `Live (${r.iterations||0} iterations)`;
+  document.getElementById('advisor-mode-badge').textContent = mode;
+
+  const steps = (r.reasoning_steps || []).map(s => {
+    if (s.type === 'text') {
+      return `<div style="padding:10px 14px;background:var(--surface2);border-radius:var(--radius-sm);margin-bottom:8px;white-space:pre-wrap;">${s.content||''}</div>`;
+    }
+    if (s.type === 'tool_use') {
+      return `<div style="padding:10px 14px;border-left:3px solid var(--primary);background:rgba(59,130,246,0.05);border-radius:var(--radius-sm);margin-bottom:8px;">
+        <div style="font-size:12px;color:var(--primary);font-weight:600;">→ ${s.name}</div>
+        <pre style="font-size:11px;color:var(--muted);margin-top:4px;white-space:pre-wrap;word-break:break-all;">${JSON.stringify(s.input||{}, null, 2)}</pre>
+      </div>`;
+    }
+    if (s.type === 'tool_result') {
+      return `<div style="padding:8px 12px;border-left:3px solid var(--success);background:rgba(16,185,129,0.05);border-radius:var(--radius-sm);margin-bottom:8px;font-size:11px;">
+        <div style="color:var(--success);font-weight:600;margin-bottom:4px;">← tool result</div>
+        <pre style="color:var(--muted);white-space:pre-wrap;max-height:200px;overflow:auto;">${typeof s.content === 'string' ? s.content : JSON.stringify(s.content,null,2)}</pre>
+      </div>`;
+    }
+    return '';
+  }).join('');
+
+  const plan = r.draft_plan;
+  const planHtml = plan ? `
+    <div class="card">
+      <div class="card-title">Draft Plan</div>
+      <pre style="white-space:pre-wrap;font-size:12px;color:var(--text);background:var(--surface2);padding:14px;border-radius:var(--radius-sm);">${JSON.stringify(plan, null, 2)}</pre>
+    </div>` : '';
+
+  const summaryHtml = r.summary ? `
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-title">Summary</div>
+      <div style="white-space:pre-wrap;">${r.summary}</div>
+    </div>` : '';
+
+  const warnings = (r.guardrail_warnings || []).map(w =>
+    `<div style="background:rgba(245,158,11,0.12);border-left:3px solid var(--warning);padding:8px 12px;border-radius:var(--radius-sm);margin-bottom:6px;font-size:12px;">&#9888; ${w}</div>`
+  ).join('');
+  const warnHtml = warnings ? `<div class="card" style="margin-bottom:16px;"><div class="card-title">Guardrail Warnings</div>${warnings}</div>` : '';
+
+  const saveBtn = plan ? `
+    <div style="margin-bottom:16px;">
+      <button class="btn btn-success" onclick="savePlanFromAdvisor()">&#9745; Save as Trade Plan</button>
+      <span class="text-muted text-sm" style="margin-left:10px;">Converts this draft to a reviewable plan on the Trade Plans tab.</span>
+    </div>` : '';
+
+  document.getElementById('advisor-output').innerHTML = `
+    ${summaryHtml}
+    ${warnHtml}
+    ${saveBtn}
+    ${steps ? `<div class="card" style="margin-bottom:16px;"><div class="card-title">Reasoning Steps</div>${steps}</div>` : ''}
+    ${planHtml}
+  `;
+}
+
+// ============================================================
+// TAX REPORTS / REALIZED GAINS
+// ============================================================
+async function loadReports() {
+  const data = await api.getRealizedGains(state.portfolioId);
+  const stNet = data.short_term_net || 0;
+  const ltNet = data.long_term_net || 0;
+  const wash = data.wash_sale_disallowed_total || 0;
+  const total = data.total_net_gain_loss || 0;
+  const setVal = (id, val) => {
+    const el = document.getElementById(id);
+    el.textContent = (val >= 0 ? '+' : '') + fmtK(val);
+    el.className = 'metric-value ' + (val >= 0 ? 'positive' : 'negative');
+  };
+  setVal('rg-st-net', stNet);
+  setVal('rg-lt-net', ltNet);
+  document.getElementById('rg-wash').textContent = fmtK(wash);
+  document.getElementById('rg-wash').className = 'metric-value neutral';
+  setVal('rg-total', total);
+  document.getElementById('rg-st-sub').textContent = `Gains: ${fmtK(data.short_term_gains||0)} · Losses: ${fmtK(data.short_term_losses||0)}`;
+  document.getElementById('rg-lt-sub').textContent = `Gains: ${fmtK(data.long_term_gains||0)} · Losses: ${fmtK(data.long_term_losses||0)}`;
+
+  const lots = data.closed_lots || [];
+  const tbody = document.getElementById('rg-tbody');
+  if (!lots.length) {
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">&#9734;</div><h3>No realized gains yet</h3><p>Executed harvests and sales will appear here.</p></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = lots.map(l => `
+    <tr>
+      <td class="td-symbol">${l.symbol}</td>
+      <td>${fmtDateShort(l.purchase_date)}</td>
+      <td>${fmtDateShort(l.sale_date)}</td>
+      <td class="td-right">${fmt$(l.proceeds)}</td>
+      <td class="td-right">${fmt$(l.cost_basis_per_share * (l.shares||0))}</td>
+      <td class="td-right ${l.gain_loss >= 0 ? 'td-positive' : 'td-negative'}">${l.gain_loss >= 0 ? '+' : ''}${fmt$(l.gain_loss)}</td>
+      <td class="td-right">${l.wash_sale_disallowed ? fmt$(l.wash_sale_disallowed) : '—'}</td>
+      <td>${l.is_long_term ? '<span class="badge badge-success">LT</span>' : '<span class="badge badge-info">ST</span>'}</td>
+    </tr>`).join('');
+}
+
+function downloadTaxReport() {
+  if (!state.portfolioId) return;
+  downloadWithAuth(`/portfolios/${state.portfolioId}/tax-report.csv`, `portfolio_${state.portfolioId}_tax_report.csv`)
+    .catch(e => toast(e.message, 'error'));
+}
+function downloadTaxReportPdf() {
+  if (!state.portfolioId) return;
+  const y = new Date().getFullYear();
+  downloadWithAuth(`/portfolios/${state.portfolioId}/tax-report.pdf?year=${y}`, `portfolio_${state.portfolioId}_tax_report_${y}.pdf`)
+    .catch(e => toast(e.message, 'error'));
+}
+function downloadForm8949() {
+  if (!state.portfolioId) return;
+  const y = new Date().getFullYear();
+  downloadWithAuth(`/portfolios/${state.portfolioId}/form-8949.csv?year=${y}`, `portfolio_${state.portfolioId}_form_8949_${y}.csv`)
+    .catch(e => toast(e.message, 'error'));
+}
+
+// ============================================================
+// AUDIT LOG (admin)
+// ============================================================
+function _auditRange() {
+  const start = document.getElementById('audit-start').value;
+  const end = document.getElementById('audit-end').value;
+  const user = document.getElementById('audit-user').value.trim();
+  if (!start || !end) return null;
+  const qs = `start=${start}&end=${end}` + (user ? `&user_id=${user}` : '');
+  return qs;
+}
+
+async function loadAudit() {
+  const qs = _auditRange();
+  if (!qs) { toast('Pick start + end dates', 'warning'); return; }
+  setLoading(true);
+  try {
+    const r = await api.request('GET', `/compliance/exam-export?${qs}`);
+    renderAudit(r);
+  } catch (e) { toast(e.message, 'error'); }
+  setLoading(false);
+}
+
+function renderAudit(r) {
+  document.getElementById('audit-count-events').textContent = (r.audit_events || []).length;
+  document.getElementById('audit-count-recs').textContent = (r.recommendations || []).length;
+  document.getElementById('audit-count-txns').textContent = (r.transactions || []).length;
+
+  const events = (r.audit_events || []).slice(0, 500);
+  document.getElementById('audit-tbody').innerHTML = events.length ? events.map(e => `
+    <tr>
+      <td class="text-muted text-sm">${fmtDate(e.created_at)}</td>
+      <td><span class="badge badge-info">${e.event_type}</span></td>
+      <td>${e.user_id ?? ''}</td>
+      <td>${e.portfolio_id ?? ''}</td>
+      <td class="text-muted text-sm">${e.object_type ? `${e.object_type}#${e.object_id ?? ''}` : ''}</td>
+      <td class="text-muted text-sm">${e.ip_address || ''}</td>
+      <td class="text-muted text-sm" style="max-width:340px;overflow:hidden;text-overflow:ellipsis;">${e.details ? JSON.stringify(e.details).slice(0,160) : ''}</td>
+    </tr>`).join('') :
+    `<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--muted);">No events in range.</td></tr>`;
+
+  const recs = (r.recommendations || []).slice(0, 200);
+  document.getElementById('audit-recs-tbody').innerHTML = recs.length ? recs.map(x => `
+    <tr>
+      <td class="text-muted text-sm">${fmtDate(x.created_at)}</td>
+      <td>${x.user_id}</td>
+      <td>${x.portfolio_id}</td>
+      <td>${x.demo_mode ? '<span class="badge badge-info">demo</span>' : '<span class="badge badge-success">live</span>'}</td>
+      <td class="text-muted text-sm">${x.model_version || ''}</td>
+      <td class="text-muted text-sm" style="max-width:340px;overflow:hidden;text-overflow:ellipsis;">${(x.prompt || '').slice(0,140)}</td>
+    </tr>`).join('') :
+    `<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--muted);">No recommendations in range.</td></tr>`;
+}
+
+function downloadAuditJson() {
+  const qs = _auditRange();
+  if (!qs) { toast('Pick start + end dates', 'warning'); return; }
+  downloadWithAuth(`/compliance/exam-export?${qs}`, `exam_export.json`).catch(e => toast(e.message, 'error'));
+}
+
+// ============================================================
+// CLIENTS
+// ============================================================
+async function loadClients() {
+  const clients = await api.listClients();
+  const tbody = document.getElementById('clients-tbody');
+  if (!clients.length) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--muted);">No clients yet. Add one above.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = clients.map(c => `
+    <tr>
+      <td>${c.id}</td>
+      <td>${c.name || ''}</td>
+      <td>${c.email || ''}</td>
+      <td class="td-right">${(c.tax_rate_short*100).toFixed(1)}%</td>
+      <td class="td-right">${(c.tax_rate_long*100).toFixed(1)}%</td>
+      <td class="text-muted text-sm">${fmtDateShort(c.created_at)}</td>
+      <td></td>
+    </tr>`).join('');
+}
+
+async function submitCreateClient() {
+  const name = document.getElementById('cl-name').value.trim();
+  const email = document.getElementById('cl-email').value.trim();
+  if (!name) { toast('Name is required', 'warning'); return; }
+  setLoading(true);
+  try {
+    await api.createClient({
+      name,
+      email: email || null,
+      tax_rate_short: parseFloat(document.getElementById('cl-st').value) || 0.37,
+      tax_rate_long: parseFloat(document.getElementById('cl-lt').value) || 0.20,
+    });
+    document.getElementById('cl-name').value = '';
+    document.getElementById('cl-email').value = '';
+    toast('Client added', 'success');
+    await loadClients();
+  } catch(e) { toast(e.message, 'error'); }
+  setLoading(false);
+}
+
+// ============================================================
+// METRICS (admin)
+// ============================================================
+
+async function loadMetrics() {
+  const body = document.getElementById('metrics-grid-body');
+  body.innerHTML = '<div class="text-muted text-sm">Loading...</div>';
+  try {
+    const m = await api.request('GET', '/admin/metrics');
+    body.innerHTML = renderMetrics(m);
+  } catch (e) { body.innerHTML = `<div class="text-muted text-sm">Error: ${e.message}</div>`; }
+}
+
+function renderMetrics(m) {
+  const card = (label, value, sub = '') => `
+    <div class="metric-card">
+      <div class="metric-label">${label}</div>
+      <div class="metric-value neutral">${value}</div>
+      ${sub ? `<div class="metric-sub">${sub}</div>` : ''}
+    </div>`;
+  const u = m.users, p = m.trade_plans, h = m.harvests, s = m.subscriptions, ai = m.ai, a = m.audit;
+  return `
+    <div class="text-muted text-sm" style="margin-bottom:10px;">Generated ${fmtDate(m.generated_at)}</div>
+
+    <h3 style="font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:16px 0 10px;">Users</h3>
+    <div class="metrics-grid" style="grid-template-columns:repeat(4,1fr);">
+      ${card('Total', u.total)}
+      ${card('Active', u.active)}
+      ${card('Individual', u.individual)}
+      ${card('New (7d)', u.new_7d, `${u.new_30d} in last 30d`)}
+      ${card('Email verified', u.email_verified, `${u.total ? (u.email_verified / u.total * 100).toFixed(0) : 0}% of total`)}
+      ${card('TOTP enabled', u.totp_enabled)}
+    </div>
+
+    <h3 style="font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:20px 0 10px;">Revenue &amp; subscriptions</h3>
+    <div class="metrics-grid" style="grid-template-columns:repeat(4,1fr);">
+      ${card('MRR (est.)', fmt$(s.mrr_estimate), 'approximation from tier × cycle')}
+      ${card('Active subs', s.active)}
+      ${card('Trialing', s.trialing)}
+      ${card('Past due', s.past_due, s.past_due > 0 ? 'dunning in progress' : '')}
+    </div>
+
+    <h3 style="font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:20px 0 10px;">Engagement</h3>
+    <div class="metrics-grid" style="grid-template-columns:repeat(4,1fr);">
+      ${card('Portfolios', m.portfolios.total)}
+      ${card('Plans executed (30d)', p.executed_30d, `${p.executed} lifetime`)}
+      ${card('Plans pending approval', p.draft + p.approved, `${p.draft} draft · ${p.approved} approved`)}
+      ${card('Harvests (30d)', h.last_30d, `${h.total} lifetime`)}
+    </div>
+
+    <h3 style="font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:20px 0 10px;">AI advisor</h3>
+    <div class="metrics-grid" style="grid-template-columns:repeat(2,1fr);">
+      ${card('Recommendations (24h)', ai.recommendations_24h, `${ai.recommendations_total} lifetime`)}
+      ${card('Audit events (24h)', a.events_24h, `${a.events_7d} in last 7 days`)}
+    </div>
+  `;
+}
+
+// ============================================================
+// BILLING — pricing + subscription status + invoices + portal
+// ============================================================
+
+const TIERS = [
+  {
+    id: 'starter',
+    name: 'Starter',
+    monthly: 29, annual: 290,
+    tagline: 'For DIY investors with up to $100K in one brokerage account.',
+    features: [
+      'Unlimited tax-loss harvesting scans',
+      'AI advisor (Claude Opus 4.5)',
+      'Spec-ID lot selector',
+      'Schwab / Fidelity CSV export',
+      'Form 8949 + Schedule D',
+    ],
+  },
+  {
+    id: 'standard',
+    name: 'Standard',
+    monthly: 59, annual: 590,
+    tagline: 'For larger portfolios up to $500K or multiple accounts.',
+    features: [
+      'Everything in Starter',
+      'Household wash-sale tracking',
+      'Multiple portfolios',
+      'Tax report PDF',
+      'Dividend reinvestment tracking',
+    ],
+    featured: true,
+  },
+  {
+    id: 'premium',
+    name: 'Premium',
+    monthly: 99, annual: 990,
+    tagline: 'Unlimited AUM, priority support, audit-ready exports.',
+    features: [
+      'Everything in Standard',
+      'Unlimited portfolio size',
+      'Compliance exam export',
+      'Priority email support',
+      'Custom sector exclusions',
+    ],
+  },
+];
+
+async function loadBilling() {
+  try {
+    const status = await api.billingStatus();
+    renderBillingStatus(status);
+    renderPricing();
+  } catch (e) {
+    document.getElementById('billing-setup-notice').style.display = 'block';
+    renderPricing();
+  }
+}
+
+function renderBillingStatus(status) {
+  const notice = document.getElementById('billing-setup-notice');
+  if (!status.billing_enabled) {
+    notice.style.display = 'block';
+  } else {
+    notice.style.display = 'none';
+  }
+  const card = document.getElementById('billing-current');
+  const body = document.getElementById('billing-current-body');
+  if (!status.has_subscription) {
+    card.style.display = 'none';
+    return;
+  }
+  card.style.display = 'block';
+  const trialing = status.status === 'trialing';
+  const trialEnd = status.trial_ends_at ? fmtDateShort(status.trial_ends_at) : '';
+  body.innerHTML = `
+    <div style="display:flex;gap:24px;flex-wrap:wrap;">
+      <div><div class="text-muted text-sm">Plan</div><div style="font-size:18px;font-weight:700;text-transform:capitalize;">${status.tier} (${status.billing_cycle})</div></div>
+      <div><div class="text-muted text-sm">Status</div><div style="font-size:16px;font-weight:600;">${status.status}${trialing ? ` — trial ends ${trialEnd}` : ''}</div></div>
+      <div><div class="text-muted text-sm">Renews</div><div style="font-size:16px;">${status.current_period_end ? fmtDateShort(status.current_period_end) : '—'}</div></div>
+    </div>`;
+}
+
+function renderPricing() {
+  const annual = document.getElementById('bc-annual-toggle').checked;
+  document.getElementById('bc-monthly-lbl').style.color = annual ? 'var(--muted)' : 'var(--text)';
+  document.getElementById('bc-annual-lbl').style.color = annual ? 'var(--text)' : 'var(--muted)';
+  const grid = document.getElementById('pricing-grid');
+  grid.innerHTML = TIERS.map(t => {
+    const price = annual ? (t.annual / 12) : t.monthly;
+    const billed = annual ? `$${t.annual}/yr billed annually` : `billed monthly`;
+    const badge = t.featured
+      ? `<div style="position:absolute;top:-10px;right:14px;background:var(--primary);color:#fff;font-size:10px;font-weight:700;padding:3px 9px;border-radius:4px;text-transform:uppercase;letter-spacing:.05em;">Most popular</div>`
+      : '';
+    const border = t.featured ? 'border-color:var(--primary);' : '';
+    return `
+      <div class="card" style="position:relative;${border}">
+        ${badge}
+        <div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:4px;">${t.name}</div>
+        <div style="font-size:32px;font-weight:800;letter-spacing:-0.5px;">$${price.toFixed(0)}<span style="font-size:14px;color:var(--muted);font-weight:500;">/mo</span></div>
+        <div class="text-muted text-sm" style="margin-bottom:4px;">${billed}</div>
+        <div class="text-muted text-sm" style="min-height:38px;margin-bottom:12px;">${t.tagline}</div>
+        <ul style="list-style:none;padding:0;margin:0 0 14px;font-size:13px;line-height:1.7;">
+          ${t.features.map(f => `<li>&#10003; ${f}</li>`).join('')}
+        </ul>
+        <button class="btn ${t.featured ? 'btn-primary' : 'btn-ghost'}" style="width:100%;" onclick="startCheckout('${t.id}', ${annual ? "'annual'" : "'monthly'"})">
+          Start free trial
+        </button>
+        <div class="text-muted text-sm" style="text-align:center;margin-top:8px;">14-day trial, cancel anytime.</div>
+      </div>`;
+  }).join('');
+
+  // Value math callout
+  const valueCallout = `
+    <div class="text-muted text-sm" style="grid-column:1/-1;text-align:center;padding:12px 16px;background:var(--surface2);border-radius:var(--radius-sm);margin-top:8px;">
+      <strong style="color:var(--text);">Value math:</strong> at a 37% marginal bracket, harvesting $8,000 of losses in a year saves <strong style="color:var(--success);">$2,960</strong> — which pays for Premium for 30 months.
+    </div>`;
+  grid.insertAdjacentHTML('beforeend', valueCallout);
+}
+
+async function startCheckout(tier, cycle) {
+  setLoading(true);
+  try {
+    const base = window.location.origin;
+    const r = await api.billingCheckout({
+      tier, billing_cycle: cycle,
+      success_url: `${base}/?checkout=success`,
+      cancel_url: `${base}/?checkout=cancel`,
+    });
+    window.location.href = r.url;
+  } catch (e) {
+    toast(e.message, 'error');
+    setLoading(false);
+  }
+}
+
+async function openBillingPortal() {
+  setLoading(true);
+  try {
+    const r = await api.billingPortal({ return_url: window.location.origin + '/' });
+    window.location.href = r.url;
+  } catch (e) {
+    toast(e.message, 'error');
+    setLoading(false);
+  }
+}
+
+async function loadInvoices() {
+  const body = document.getElementById('invoices-body');
+  body.textContent = 'Loading...';
+  try {
+    const r = await api.billingInvoices();
+    if (!r.invoices || !r.invoices.length) {
+      body.innerHTML = '<div class="text-muted text-sm">No invoices yet.</div>';
+      return;
+    }
+    body.innerHTML = `
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Date</th><th>Number</th><th>Amount</th><th>Status</th><th></th>
+          </tr></thead>
+          <tbody>
+            ${r.invoices.map(inv => `
+              <tr>
+                <td>${fmtDateShort(inv.created)}</td>
+                <td>${inv.number || inv.id}</td>
+                <td class="td-right">${fmt$(inv.amount_paid / 100)}</td>
+                <td><span class="badge ${inv.status === 'paid' ? 'badge-success' : 'badge-info'}">${inv.status}</span></td>
+                <td>${inv.invoice_pdf ? `<a href="${inv.invoice_pdf}" target="_blank" style="color:var(--primary);">PDF &#8599;</a>` : ''}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>`;
+  } catch (e) {
+    body.innerHTML = `<div class="text-muted text-sm">Could not load invoices: ${e.message}</div>`;
+  }
+}
+
+// ============================================================
+// ADMIN — USERS, CORP ACTIONS, DIVIDENDS
+// ============================================================
+async function loadAdmin() {
+  if (!state.currentUser || state.currentUser.role !== 'admin') {
+    toast('Admin only', 'error');
+    return;
+  }
+  refreshMfaStatus();
+  try {
+    const users = await api.listUsers();
+    const tbody = document.getElementById('users-tbody');
+    tbody.innerHTML = users.map(u => `
+      <tr>
+        <td>${u.id}</td>
+        <td>${u.email}</td>
+        <td>${u.full_name || ''}</td>
+        <td><span class="badge ${u.role === 'admin' ? 'badge-harvest' : 'badge-info'}">${u.role}</span></td>
+        <td>${u.is_active ? '✓' : '—'}</td>
+        <td class="text-muted text-sm">${fmtDateShort(u.created_at)}</td>
+      </tr>`).join('');
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function submitCreateUser() {
+  const email = document.getElementById('u-email').value.trim();
+  const password = document.getElementById('u-password').value;
+  const full_name = document.getElementById('u-name').value.trim();
+  const role = document.getElementById('u-role').value;
+  if (!email || !password) { toast('Email and password are required', 'warning'); return; }
+  setLoading(true);
+  try {
+    await api.createUser({ email, password, full_name: full_name || null, role });
+    document.getElementById('u-email').value = '';
+    document.getElementById('u-password').value = '';
+    document.getElementById('u-name').value = '';
+    toast('User created', 'success');
+    await loadAdmin();
+  } catch(e) { toast(e.message, 'error'); }
+  setLoading(false);
+}
+
+async function submitCorpAction() {
+  const symbol = document.getElementById('ca-symbol').value.trim().toUpperCase();
+  const oldR = parseFloat(document.getElementById('ca-old').value);
+  const newR = parseFloat(document.getElementById('ca-new').value);
+  const ex = document.getElementById('ca-ex').value.trim() || null;
+  const notes = document.getElementById('ca-notes').value.trim() || null;
+  if (!symbol || !oldR || !newR) { toast('Symbol and rates required', 'warning'); return; }
+  if (!confirm(`Apply ${oldR}-for-${newR} split for ${symbol} across all portfolios?`)) return;
+  setLoading(true);
+  try {
+    const r = await api.applySplit({ symbol, old_rate: oldR, new_rate: newR, ex_date: ex, notes });
+    toast(`Split applied: ${r.positions_affected || 0} positions affected (ratio ${r.ratio})`, 'success');
+  } catch(e) { toast(e.message, 'error'); }
+  setLoading(false);
+}
+
+// ============================================================
+// ADMIN MFA (TOTP) ENROLLMENT
+// ============================================================
+
+function refreshMfaStatus() {
+  const u = state.currentUser || {};
+  const status = document.getElementById('mfa-status');
+  const enrollBtn = document.getElementById('mfa-enroll-btn');
+  const disableBtn = document.getElementById('mfa-disable-btn');
+  if (u.totp_enabled) {
+    status.innerHTML = '&#10003; 2FA is <strong style="color:var(--success);">enabled</strong> on your account. Admin login will require a 6-digit code.';
+    enrollBtn.style.display = 'none';
+    disableBtn.style.display = '';
+  } else {
+    status.innerHTML = '&#9888; 2FA is <strong style="color:var(--warning);">not enabled</strong>. Required by SEC Rule 206(4)-7 for admin accounts with access to client data.';
+    enrollBtn.style.display = '';
+    disableBtn.style.display = 'none';
+  }
+  document.getElementById('mfa-enroll-body').style.display = 'none';
+  document.getElementById('mfa-disable-body').style.display = 'none';
+}
+
+function _renderQr(uri) {
+  const qr = qrcode(0, 'M');
+  qr.addData(uri);
+  qr.make();
+  document.getElementById('mfa-qr').innerHTML = qr.createImgTag(5, 8);
+}
+
+async function mfaStartEnroll() {
+  setLoading(true);
+  try {
+    const r = await api.request('POST', '/auth/mfa/enroll');
+    document.getElementById('mfa-secret').textContent = r.secret;
+    _renderQr(r.otpauth_uri);
+    document.getElementById('mfa-enroll-body').style.display = 'block';
+    document.getElementById('mfa-enroll-btn').style.display = 'none';
+    document.getElementById('mfa-code').focus();
+  } catch (e) { toast(e.message, 'error'); }
+  setLoading(false);
+}
+
+function mfaCancel() {
+  refreshMfaStatus();
+}
+
+async function mfaConfirm() {
+  const code = document.getElementById('mfa-code').value.trim();
+  if (code.length !== 6) { toast('Enter the 6-digit code', 'warning'); return; }
+  setLoading(true);
+  try {
+    await api.request('POST', '/auth/mfa/verify', { code });
+    toast('2FA enabled. You\'ll need a code on your next admin login.', 'success');
+    state.currentUser = await api.me();
+    refreshMfaStatus();
+  } catch (e) { toast(e.message, 'error'); }
+  setLoading(false);
+}
+
+function mfaShowDisable() {
+  document.getElementById('mfa-disable-body').style.display = 'block';
+  document.getElementById('mfa-disable-btn').style.display = 'none';
+  document.getElementById('mfa-disable-code').focus();
+}
+
+async function mfaDisable() {
+  const code = document.getElementById('mfa-disable-code').value.trim();
+  if (code.length !== 6) { toast('Enter the 6-digit code', 'warning'); return; }
+  if (!confirm('Really disable 2FA on this account?')) return;
+  setLoading(true);
+  try {
+    await api.request('POST', '/auth/mfa/disable', { code });
+    toast('2FA disabled.', 'info');
+    state.currentUser = await api.me();
+    refreshMfaStatus();
+  } catch (e) { toast(e.message, 'error'); }
+  setLoading(false);
+}
+
+async function runDividendSweep() {
+  const lookback = parseInt(document.getElementById('div-lookback').value) || 7;
+  setLoading(true);
+  try {
+    const r = await api.processDividends(lookback);
+    document.getElementById('div-output').innerHTML = `
+      <div class="card" style="background:var(--surface2);">
+        <div><strong>${r.total_dividends_applied || 0}</strong> dividends applied across <strong>${r.portfolios_processed || 0}</strong> portfolios.</div>
+        <div style="margin-top:4px;">Total cash credited: <strong>${fmt$(r.total_cash_credited || 0)}</strong></div>
+      </div>`;
+    toast('Dividend sweep complete', 'success');
+  } catch(e) { toast(e.message, 'error'); }
+  setLoading(false);
+}
+
+// ============================================================
+// ONBOARDING WIZARD (individual persona, first-time flow)
+// ============================================================
+const WIZARD_STEPS = ['verify_email', 'accept_docs', 'fund', 'first_scan'];
+let wizardState = { step: 0, investment: 100000, excludedSectors: [] };
+
+function shouldRunWizard() {
+  const u = state.currentUser;
+  if (!u || u.role !== 'individual') return false;
+  // Only auto-run if they have zero portfolios yet — returning users skip it
+  return (state.portfolios || []).length === 0;
+}
+
+function openWizard() {
+  wizardState.step = 0;
+  document.getElementById('wizard-overlay').style.display = 'flex';
+  renderWizardStep();
+}
+function skipWizard() {
+  document.getElementById('wizard-overlay').style.display = 'none';
+}
+function wizardBack() {
+  if (wizardState.step > 0) { wizardState.step -= 1; renderWizardStep(); }
+}
+async function wizardNext() {
+  const stepName = WIZARD_STEPS[wizardState.step];
+  try {
+    if (stepName === 'verify_email') {
+      // Nothing to submit — user can resend from the step
+    } else if (stepName === 'accept_docs') {
+      // Acks already gated at login; this step is informational for first-runners
+    } else if (stepName === 'fund') {
+      const v = parseFloat(document.getElementById('wz-investment').value);
+      if (!v || v < 1000) { toast('Enter an amount of at least $1,000', 'warning'); return; }
+      wizardState.investment = v;
+      const checks = document.querySelectorAll('#wz-sectors input[type="checkbox"]');
+      wizardState.excludedSectors = [...checks].filter(c => c.checked).map(c => c.value);
+      // Create portfolio + construct
+      setLoading(true);
+      try {
+        const portfolio = await api.createPortfolio({ name: 'My Direct Index', initial_value: v });
+        await api.constructPortfolio(portfolio.id, {
+          excluded_sectors: wizardState.excludedSectors,
+          excluded_symbols: [],
+        });
+        await loadPortfolios();
+        selectPortfolio(portfolio.id);
+      } finally { setLoading(false); }
+    } else if (stepName === 'first_scan') {
+      skipWizard();
+      switchTab('advisor');
+      return;
+    }
+  } catch (e) { toast(e.message, 'error'); return; }
+
+  if (wizardState.step < WIZARD_STEPS.length - 1) {
+    wizardState.step += 1;
+    renderWizardStep();
+  } else {
+    skipWizard();
+  }
+}
+
+function renderWizardStep() {
+  const step = wizardState.step;
+  const pct = ((step + 1) / WIZARD_STEPS.length) * 100;
+  document.getElementById('wz-progress').style.width = pct + '%';
+  document.getElementById('wz-subtitle').textContent = `Step ${step + 1} of ${WIZARD_STEPS.length}`;
+  document.getElementById('wz-back').style.visibility = step === 0 ? 'hidden' : 'visible';
+
+  const body = document.getElementById('wz-body');
+  const next = document.getElementById('wz-next');
+  const name = WIZARD_STEPS[step];
+
+  if (name === 'verify_email') {
+    next.textContent = 'Continue';
+    body.innerHTML = `
+      <h3 style="margin-bottom:10px;">Check your email</h3>
+      <p style="color:var(--muted);font-size:13px;line-height:1.5;">
+        We sent a verification link to <strong style="color:var(--text);">${state.currentUser?.email || 'your email'}</strong>.
+        Click it to confirm your address. You can continue using the app while that arrives.
+      </p>
+      <div style="margin-top:14px;display:flex;gap:8px;">
+        <button class="btn btn-ghost btn-sm" onclick="resendVerification()">Resend email</button>
+      </div>
+    `;
+  } else if (name === 'accept_docs') {
+    next.textContent = 'Continue';
+    body.innerHTML = `
+      <h3 style="margin-bottom:10px;">Terms &amp; disclosures</h3>
+      <p style="color:var(--muted);font-size:13px;line-height:1.5;">
+        You've already accepted the Terms of Service, ADV Part 2A brochure, and Privacy Notice required for a registered advisor to deliver personalized recommendations.
+        That acceptance is on file with a timestamp and IP for audit purposes.
+      </p>
+      <p style="color:var(--muted);font-size:13px;margin-top:10px;">
+        If you want to re-read them, hit the "Sign out" link and start over. Otherwise, let's build your portfolio.
+      </p>
+    `;
+  } else if (name === 'fund') {
+    next.textContent = 'Build my portfolio';
+    body.innerHTML = `
+      <h3 style="margin-bottom:10px;">Fund your index</h3>
+      <p style="color:var(--muted);font-size:13px;line-height:1.5;margin-bottom:14px;">
+        Pick an amount and (optionally) sectors to exclude. We'll construct a weighted replica of the S&amp;P 500 at that size, ready for lot-level harvesting.
+      </p>
+      <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px;">Initial investment ($)</label>
+      <input id="wz-investment" type="number" min="1000" step="1000" value="100000"
+        style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:var(--radius-sm);font-size:14px;margin-bottom:12px;"/>
+      <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:6px;">Exclude sectors (optional)</label>
+      <div id="wz-sectors" class="sector-checkboxes">
+        ${['Energy','Tobacco','Gambling','Defense','Fossil Fuels','Firearms'].map(s =>
+          `<label class="sector-checkbox"><input type="checkbox" value="${s}"/><span>${s}</span></label>`
+        ).join('')}
+      </div>
+    `;
+  } else if (name === 'first_scan') {
+    next.textContent = 'Run the advisor';
+    body.innerHTML = `
+      <h3 style="margin-bottom:10px;">You're set up.</h3>
+      <p style="color:var(--muted);font-size:13px;line-height:1.5;">
+        Your portfolio is live and priced. From here, the AI Advisor will scan for tax-loss harvesting opportunities whenever the market gives you some.
+      </p>
+      <p style="color:var(--muted);font-size:13px;margin-top:10px;">
+        Two things to know:
+      </p>
+      <ul style="color:var(--muted);font-size:13px;padding-left:20px;margin-top:6px;line-height:1.6;">
+        <li>Harvesting is pointless on day one — you need a loss to realize one. Come back after a down week.</li>
+        <li>The advisor drafts trades; you approve them, then execute at your own broker. Nothing fires automatically.</li>
+      </ul>
+    `;
+  }
+}
+
+async function resendVerification() {
+  try {
+    await api.request('POST', '/auth/resend-verification');
+    toast('Verification email re-sent. Check your inbox (and spam).', 'success');
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+// ============================================================
+// SIGNUP / ACKNOWLEDGEMENT GATE
+// ============================================================
+function showSignupScreen(e) {
+  if (e) e.preventDefault();
+  document.getElementById('login-overlay').style.display = 'none';
+  document.getElementById('signup-overlay').style.display = 'flex';
+}
+function showLoginFromSignup(e) {
+  if (e) e.preventDefault();
+  document.getElementById('signup-overlay').style.display = 'none';
+  document.getElementById('login-overlay').style.display = 'flex';
+}
+
+async function handleSignup(e) {
+  e.preventDefault();
+  const btn = document.getElementById('signup-btn');
+  btn.disabled = true; btn.textContent = 'Creating...';
+  const email = document.getElementById('su-email').value.trim();
+  const password = document.getElementById('su-password').value;
+  const full_name = document.getElementById('su-name').value.trim();
+  try {
+    if (!password || password.length < 8) throw new Error('Password must be at least 8 characters');
+    const r = await api.signupIndividual({ email, password, full_name: full_name || null });
+    setToken(r.access_token);
+    document.getElementById('signup-overlay').style.display = 'none';
+    hideLoginScreen();
+    await init();
+  } catch(err) {
+    const el = document.getElementById('signup-error');
+    el.textContent = String(err.message || err).slice(0, 200);
+    el.style.display = 'block';
+  }
+  btn.disabled = false; btn.textContent = 'Create account';
+}
+
+const ACK_COPY = {
+  tos: {
+    title: 'Terms of Service',
+    body: 'By using DirectIndex Pro you agree that the service provides general information and software tools. You are responsible for executing trades at your own broker and for the accuracy of tax reports filed with the IRS.',
+  },
+  adv_part_2a: {
+    title: 'Form ADV Part 2A Brochure',
+    body: 'We are (in progress of being) a Registered Investment Adviser. The ADV Part 2A brochure describes our advisory services, fees, conflicts of interest, and disciplinary history. SEC Rule 204-3 requires you receive and acknowledge this brochure before any personalized recommendation is delivered.',
+  },
+  privacy: {
+    title: 'Privacy Notice',
+    body: 'Under Regulation S-P we must provide our privacy policy at account opening and annually thereafter. We collect your email, portfolio lot data, and interactions with the AI advisor; we do not sell this data to third parties.',
+  },
+};
+
+async function checkAndGateAcks() {
+  try {
+    const req = await api.requiredAcks();
+    if (!req.missing || !req.missing.length) return true;
+    await renderAckGate(req.missing);
+    return false;
+  } catch(e) { return true; }
+}
+
+function renderAckGate(missing) {
+  const ov = document.getElementById('ack-overlay');
+  const list = document.getElementById('ack-items');
+  list.innerHTML = missing.map(m => {
+    const copy = ACK_COPY[m.document_type] || { title: m.document_type, body: '' };
+    return `
+      <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:14px;margin-bottom:12px;">
+        <div style="font-weight:600;margin-bottom:6px;">${copy.title} <span class="text-muted text-sm" style="font-weight:400;">v${m.version}</span></div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">${copy.body}</div>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;">
+          <input type="checkbox" class="ack-chk" data-doc="${m.document_type}" data-version="${m.version}"
+                 onchange="updateAckContinue()" style="width:16px;height:16px;accent-color:var(--primary);cursor:pointer;"/>
+          <span>I acknowledge and accept the ${copy.title}</span>
+        </label>
+      </div>`;
+  }).join('');
+  ov.style.display = 'flex';
+  updateAckContinue();
+}
+
+function updateAckContinue() {
+  const boxes = document.querySelectorAll('.ack-chk');
+  const all = [...boxes].every(b => b.checked);
+  document.getElementById('ack-continue').disabled = !all;
+}
+
+async function finishAcks() {
+  const boxes = document.querySelectorAll('.ack-chk');
+  setLoading(true);
+  try {
+    for (const b of boxes) {
+      await api.postAck({ document_type: b.dataset.doc, version: b.dataset.version });
+    }
+    document.getElementById('ack-overlay').style.display = 'none';
+    toast('Thank you — acknowledgements recorded.', 'success');
+    state.currentUser = await api.me();
+  } catch(e) { toast(e.message, 'error'); }
+  setLoading(false);
+}
+
+// ============================================================
+// TRADE PLANS
+// ============================================================
+async function loadPlans() {
+  const plans = await api.listPlans(state.portfolioId);
+  const container = document.getElementById('plans-list');
+  if (!plans.length) {
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon">&#9745;</div><h3>No plans yet</h3><p>Run the AI Advisor and save its draft as a plan.</p></div>`;
+    return;
+  }
+  container.innerHTML = plans.map(p => renderPlanCard(p)).join('');
+}
+
+function renderPlanCard(p) {
+  const badge = {
+    DRAFT: 'badge-info', APPROVED: 'badge-success',
+    EXECUTED: 'badge-harvest', CANCELLED: 'badge-sell', EXPIRED: 'badge-danger',
+  }[p.status] || 'badge-info';
+  const sells = (p.items || []).filter(i => i.action === 'SELL');
+  const buys = (p.items || []).filter(i => i.action === 'BUY');
+  const actions = [];
+  if (p.status === 'DRAFT') {
+    actions.push(`<button class="btn btn-success btn-sm" onclick="approvePlanAction(${p.id})">Approve</button>`);
+    actions.push(`<button class="btn btn-ghost btn-sm" onclick="cancelPlanAction(${p.id})">Cancel</button>`);
+  }
+  if (p.status === 'APPROVED') {
+    actions.push(`<button class="btn btn-primary btn-sm" onclick="exportPlanCsv(${p.id}, 'schwab')">Schwab CSV</button>`);
+    actions.push(`<button class="btn btn-primary btn-sm" onclick="exportPlanCsv(${p.id}, 'fidelity')">Fidelity CSV</button>`);
+    actions.push(`<button class="btn btn-ghost btn-sm" onclick="exportPlanCsv(${p.id}, 'generic')">Generic CSV</button>`);
+    actions.push(`<label class="btn btn-warning btn-sm" style="cursor:pointer;">
+      Reconcile&hellip; <input type="file" accept=".csv" style="display:none;" onchange="reconcilePlan(${p.id}, this.files[0])"/>
+    </label>`);
+  }
+  const itemRows = (p.items || []).map(i => `
+    <tr>
+      <td><span class="badge ${i.action === 'BUY' ? 'badge-buy' : 'badge-sell'}">${i.action}</span></td>
+      <td class="td-symbol">${i.symbol}</td>
+      <td class="td-right">${fmtShares(i.shares)}</td>
+      <td class="td-right">${i.est_price ? fmt$(i.est_price) : '—'}</td>
+      <td class="td-right">${i.est_proceeds ? fmt$(i.est_proceeds) : '—'}</td>
+      <td class="text-muted text-sm">${i.notes || ''}</td>
+    </tr>`).join('');
+  return `
+    <div class="card" style="margin-bottom:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+        <div>
+          <div style="font-weight:700;">Plan #${p.id} <span class="badge ${badge}">${p.status}</span></div>
+          <div class="text-muted text-sm" style="margin-top:2px;">
+            Created ${fmtDateShort(p.created_at)} &middot; ${sells.length} sells &middot; ${buys.length} buys
+            ${p.expires_at && p.status === 'DRAFT' ? ` &middot; expires ${fmtDateShort(p.expires_at)}` : ''}
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">${actions.join('')}</div>
+      </div>
+      ${p.summary ? `<div style="white-space:pre-wrap;margin-bottom:10px;font-size:13px;">${p.summary}</div>` : ''}
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Action</th><th>Symbol</th><th class="td-right">Shares</th><th class="td-right">Est. Price</th><th class="td-right">Est. Value</th><th>Notes</th></tr></thead>
+          <tbody>${itemRows}</tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+async function approvePlanAction(planId) {
+  if (!confirm('Approve this plan? It will be locked for execution.')) return;
+  setLoading(true);
+  try { await api.approvePlan(state.portfolioId, planId); toast('Plan approved', 'success'); await loadPlans(); }
+  catch(e) { toast(e.message, 'error'); }
+  setLoading(false);
+}
+async function cancelPlanAction(planId) {
+  if (!confirm('Cancel this plan?')) return;
+  setLoading(true);
+  try { await api.cancelPlan(state.portfolioId, planId); toast('Plan cancelled', 'info'); await loadPlans(); }
+  catch(e) { toast(e.message, 'error'); }
+  setLoading(false);
+}
+function exportPlanCsv(planId, format) {
+  downloadWithAuth(
+    `/portfolios/${state.portfolioId}/trade-plans/${planId}/export.csv?format=${format}`,
+    `trade_plan_${planId}_${format}.csv`,
+  ).catch(e => toast(e.message, 'error'));
+}
+async function reconcilePlan(planId, file) {
+  if (!file) return;
+  if (!confirm(`Reconcile plan #${planId} with "${file.name}"? This marks the plan EXECUTED.`)) return;
+  const fd = new FormData(); fd.append('file', file);
+  setLoading(true);
+  try {
+    const r = await uploadFile(`/portfolios/${state.portfolioId}/trade-plans/${planId}/reconcile`, fd);
+    toast(`Reconciled: ${r.imported_lots || 0} lots imported (${r.detected_format})`, 'success');
+    await loadPlans();
+  } catch(e) { toast(e.message, 'error'); }
+  setLoading(false);
+}
+
+// Wire "Save as Plan" into the advisor output
+async function savePlanFromAdvisor() {
+  const out = document.getElementById('advisor-output').dataset.lastResult;
+  if (!out) { toast('Run the advisor first', 'warning'); return; }
+  const parsed = JSON.parse(out);
+  if (!parsed.draft_plan) { toast('Advisor did not produce a draft plan', 'warning'); return; }
+  setLoading(true);
+  try {
+    await api.createPlan(state.portfolioId, {
+      draft_plan: parsed.draft_plan,
+      summary: parsed.summary || '',
+      recommendation_log_id: parsed.recommendation_log_id || null,
+    });
+    toast('Draft plan saved — see Trade Plans tab', 'success');
+  } catch(e) { toast(e.message, 'error'); }
+  setLoading(false);
+}
+
+// ---- INIT ----
+async function init() {
+  setupTabListeners();
+  try { state.currentUser = await api.me(); } catch(e) {}
+  if (state.currentUser && state.currentUser.role === 'admin') {
+    document.querySelectorAll('.admin-only').forEach(el => el.style.display = '');
+  }
+  // Gate on required acknowledgements before loading data
+  if (state.currentUser) {
+    await checkAndGateAcks();
+  }
+  await loadPortfolios();
+  // First-time individual users — open the wizard after acks + portfolio list
+  if (shouldRunWizard()) {
+    openWizard();
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  if (getToken()) {
+    hideLoginScreen();
+    init();
+  } else {
+    showLoginScreen();
+  }
+});
+</script>
+</body>
+</html>
