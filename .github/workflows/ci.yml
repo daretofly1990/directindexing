@@ -15,6 +15,9 @@ jobs:
       ADMIN_EMAIL: admin@example.com
       ADMIN_PASSWORD: testpass
       FIELD_ENCRYPTION_KEYS: ""
+      # Force failure detail to stdout for easier CI debugging
+      PYTHONDONTWRITEBYTECODE: "1"
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
 
     steps:
       - uses: actions/checkout@v4
@@ -26,17 +29,27 @@ jobs:
           cache: pip
           cache-dependency-path: backend/requirements*.txt
 
+      - name: Show environment
+        run: |
+          python --version
+          pip --version
+          echo "--- OS ---"
+          cat /etc/os-release | head -5 || true
+
       - name: Install dependencies
         run: |
+          pip install --upgrade pip
           pip install -r backend/requirements.txt
           pip install -r backend/requirements-dev.txt
           pip install ruff
+          echo "--- installed versions ---"
+          pip list | grep -iE "bcrypt|passlib|pydantic|fastapi|sqlalchemy|anthropic|stripe|sentry|reportlab|aiosmtplib|boto3|pyotp|slowapi|cryptography|ruff|pytest" || true
 
       - name: Lint (ruff)
-        run: ruff check backend/
+        run: ruff check backend/ --output-format=github
 
       - name: Run full test suite
-        run: pytest backend/tests/ -v --tb=short
+        run: pytest backend/tests/ -v --tb=short -rfE
 
   ai-eval:
     runs-on: ubuntu-latest
@@ -45,6 +58,7 @@ jobs:
       JWT_SECRET: test-secret-at-least-32-characters-long
       ADMIN_EMAIL: admin@example.com
       ADMIN_PASSWORD: testpass
+      FIELD_ENCRYPTION_KEYS: ""
 
     steps:
       - uses: actions/checkout@v4
@@ -58,6 +72,7 @@ jobs:
 
       - name: Install dependencies
         run: |
+          pip install --upgrade pip
           pip install -r backend/requirements.txt
           pip install -r backend/requirements-dev.txt
 
@@ -65,7 +80,7 @@ jobs:
         # Named job so branch-protection rules can require the AI eval pass
         # independently of the rest of the tests. If these fail, the agent
         # behavior regressed — do not merge.
-        run: pytest backend/tests/test_ai_guardrails.py -v --tb=short
+        run: pytest backend/tests/test_ai_guardrails.py -v --tb=short -rfE
 
   docker:
     runs-on: ubuntu-latest
