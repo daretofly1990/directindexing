@@ -2,9 +2,13 @@ fastapi==0.111.0
 uvicorn[standard]==0.29.0
 sqlalchemy==2.0.30
 aiosqlite==0.20.0
-httpx==0.27.0
-pydantic==2.7.1
-pydantic-settings==2.3.0
+# httpx / pydantic / pydantic-settings loosened from exact pins because mcp>=1.0
+# requires pydantic>=2.7.2 and we were stuck on 2.7.1. Compatible ranges preserve
+# behavior (pydantic v2, httpx 0.27 wire-compat) while letting the resolver pick
+# a consistent set.
+httpx>=0.27.0,<1.0
+pydantic>=2.7.2,<3.0
+pydantic-settings>=2.3.0,<3.0
 yfinance==0.2.40
 beautifulsoup4>=4.12.0
 lxml>=5.0.0

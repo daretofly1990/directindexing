@@ -4,7 +4,7 @@
 
 Organized by phase. Do them in order. Don't skip. If an item seems redundant with something you did in staging — do it again for prod.
 
-Owner: you. Updated: 2026-04-20.
+Owner: you. Updated: 2026-04-21.
 
 ---
 
@@ -35,14 +35,19 @@ Each of these is a real change to `.env` or an external account. None can happen
 ### Services that need external accounts
 
 - [ ] **Anthropic** — account has billing enabled + credits. Budget ~$1.50/user/month for opus, ~$0.08/user/month for haiku.
+- [ ] **Anthropic spend cap + alert** — set a monthly budget limit in the Anthropic console AND a usage alert at 50% so a runaway loop or abusive user can't drain the account overnight.
+- [ ] **Finnhub plan confirmation + usage alert** — confirm the plan covers expected traffic (free tier is 60 req/min; the market-cap cache + quote batching keeps well under this, but a regression could blow through it). Add a usage-threshold alert in the Finnhub dashboard.
 - [ ] **Stripe** — three products created (Starter / Standard / Premium), each with monthly + annual prices (6 price IDs total). Webhook endpoint registered at `https://yourdomain.com/api/billing/webhook` with secret copied into `.env`.
 - [ ] **Sentry** — project created, DSN set in `.env` as `SENTRY_DSN`. Set `SENTRY_ENVIRONMENT=production`.
 - [ ] **AWS IAM** — role or key with: `secretsmanager:GetSecretValue` on `direct-indexing/*`; `s3:PutObject` + `s3:DeleteObject` + `s3:ListBucket` on the backup bucket.
 - [ ] **S3 backup bucket** created, versioning on, server-side encryption enforced, public access blocked. Paste bucket name into `S3_BACKUP_BUCKET`.
 - [ ] **DR scratch Postgres** — second managed DB (smaller tier is fine), URL pasted into `DR_DRILL_TARGET_URL`. Quarterly drill writes here.
+- [ ] **Managed Postgres PITR enabled** — point-in-time recovery on the production DB. Our nightly `pg_dump` gives ≈ 24h RPO; PITR is the primary defense against a bad-migration scenario (RPO of minutes). Check the managed-DB console — Fly Postgres needs it enabled on the volume; Render + Supabase have it on by default on paid tiers.
 - [ ] **SMTP** — Mailtrap live tier (or SendGrid/Postmark/SES). Sender domain verified + SPF/DKIM records added to your DNS. `SMTP_FROM` = a real verified sender address.
 - [ ] **Domain** — purchased, DNS pointed at Fly/Render, Caddy (or Fly's built-in TLS) has a valid cert. Verify with `curl -I https://yourdomain.com/health`.
 - [ ] **Mailtrap live domain DNS** — if using Mailtrap Send, verify DKIM + SPF + DMARC per Mailtrap's sending-domains UI, or emails go to spam.
+- [ ] **Uptime monitor** — Better Stack / Pingdom / UptimeRobot pointed at `GET /health/deep` (exercises DB + Finnhub + Anthropic + encryption config). Alert on `status != "ok"` to Slack/email/SMS with escalation.
+- [ ] **Log shipping** — pipe stdout from Fly/Render to a searchable aggregator (CloudWatch, Better Stack Logs, Grafana Cloud, Axiom). JSON logging is already enabled via `JSON_LOGS=1`; the host just needs a drain configured.
 
 ### Env vars with dev-safe defaults that must change for prod
 
@@ -82,6 +87,10 @@ Don't skip these. Every one of them has bitten a startup.
 - [ ] **Seed a production admin-safe demo portfolio** using `seed_demo.py` **but with a different email + strong password** than the defaults. The defaults (`demo@example.com` / `demo12345`) must NOT ship to prod.
 - [ ] **First nightly backup** confirmed — check the S3 bucket the next morning for `pgdumps/direct-indexing-YYYYMMDDT020000Z.dump`.
 - [ ] **First harvest-notification sweep** confirmed — 21:00 UTC log line: `Harvest-opportunity notify: sent=N, skipped=N, errors=0`.
+- [ ] **Kill-switch end-to-end test** — `POST /api/admin/kill-switch` to enable, confirm every trade path returns 503 (sell, harvest, trade-plan approve, mark-executed, rebalance execute, harvest-agent), `DELETE /api/admin/kill-switch` to disable, confirm paths resume. If this is broken, the "stop everything" button doesn't work when it's most needed.
+- [ ] **Scale web workers to match load-test sizing** — prod instances should match what the load test validated against on staging. If you passed the load test on 2× 512MB instances, ship prod on at least 2× 512MB (ideally with headroom). Staging and prod drifting in sizing is how load tests stop predicting anything.
+- [ ] **Scrub log lines for PII** — tail the logs during the smoke test and confirm prompt/reasoning/tool-call-json strings do NOT appear in plaintext in logs. They're encrypted in the DB; the log path should also not leak them.
+- [ ] **Frontend Invite-your-CPA button** — the API is live (`POST /api/cpa-invites`, `GET /api/cpa/view?token=X`); the tax-report tab has no entry point UI yet. Soft-launch blocker, not hard-launch.
 
 ---
 
@@ -102,6 +111,7 @@ These are the dev-safe-default → production-appropriate toggles. Once confiden
 - [ ] **`fly logs` / Render live log tail** running somewhere — look for 500s, spiking latency on Finnhub/Anthropic, anything marked `ERROR` or `CRITICAL`
 - [ ] **`/api/admin/metrics`** snapshot hourly — users/day, harvests/day, MRR, audit events/day. Drift or stalling = a bug upstream.
 - [ ] **Sign up as a real retail user** yourself (separate from the admin account). Click through: signup → verify email → acknowledge ToS/ADV/Privacy → onboarding wizard → portfolio construction → first harvest scan. Something breaks here every time; better you find it than the first real customer.
+- [ ] **On-call + escalation path documented** — for a solo founder: a pager number on the Sentry alert + an uptime-monitor SMS + a documented "if the founder is unreachable, do X" note (e.g. the kill-switch URL + admin creds in a trusted person's 1Password vault). The app can be down without a person knowing; don't let that happen silently.
 
 ---
 
