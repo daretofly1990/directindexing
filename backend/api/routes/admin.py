@@ -1,7 +1,7 @@
 """
-Admin API routes for index constituent management.
-
-# TODO: auth — all endpoints should require an admin API key or JWT before going to production.
+Admin API routes. Every mutating endpoint requires `Depends(require_admin)`
+so only admin-role JWTs pass. Non-mutating status endpoints still require
+admin since they expose operational info.
 """
 
 import time
@@ -42,14 +42,13 @@ IndexParam = Literal["sp500", "nasdaq100", "russell1000", "all"]
 @router.post("/constituents/refresh")
 async def trigger_refresh(
     index: IndexParam = Query("all", description="Which index to refresh"),
+    _=Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ):
     """
     Trigger a live refresh of constituent data from upstream sources.
-
-    Returns per-index stats: row count, as_of timestamp, duration_ms.
+    Admin-only: hits yfinance + Wikipedia, expensive + rate-limited upstream.
     """
-    # TODO: auth — verify admin credentials before allowing refresh.
     targets = list(VALID_INDEXES) if index == "all" else [index]
     results = []
 
@@ -311,11 +310,11 @@ async def dr_drill_history(
 
 
 @router.get("/constituents/status")
-async def constituents_status(db: AsyncSession = Depends(get_db)):
-    """
-    Return per-index last_refreshed timestamp and active constituent count.
-    """
-    # TODO: auth
+async def constituents_status(
+    _=Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Per-index last_refreshed timestamp and active constituent count. Admin-only."""
     status = []
     for idx in sorted(VALID_INDEXES):
         ts = await last_refreshed(db, idx)

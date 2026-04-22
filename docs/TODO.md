@@ -49,6 +49,10 @@
 
 ## Pre-launch cutover checklist (flip these the day you go live)
 
+**Full checklist lives at [docs/pre_launch_checklist.md](pre_launch_checklist.md) — 6 phases covering legal/content, pre-deploy secrets, deploy, post-deploy verification, go-live env flips, day-of monitoring, and the regulatory gate.**
+
+The highlights below are the env-var flips specifically. For the complete cutover runbook (including what to rotate, what external accounts to create, and what to test before letting a real user sign up), use the full checklist document.
+
 These are deliberately left at dev-safe defaults so nothing breaks during development. When billing is live and you're ready to ship to real retail customers, flip them in order:
 
 - [ ] **Set `CLAUDE_MODEL_DEFAULT=claude-haiku-4-5`** in production `.env`. Keeps `CLAUDE_MODEL_PREMIUM=claude-opus-4-5`. Result: starter / standard / trial-lapsed / no-sub users route to Haiku (~20× cheaper output tokens), premium-tier subscribers keep Opus. Zero code change, just an env flip + restart. Drops API spend from ~$1.50/user/mo to ~$0.08/user/mo on the two cheap tiers. Per-tier routing is tested (`backend/tests/test_claude_model_routing.py`) and defaults are opus/opus so dev / staging / early-beta continues to behave identically.

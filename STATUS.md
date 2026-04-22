@@ -10,6 +10,12 @@ policies) is intentionally deferred to the final step before launch — see
 rationale and checklist. Expect a 3–5 month gap between "software done" and
 "legally shippable to retail."
 
+## Pre-launch cutover checklist
+**Definitive list of every secret to rotate, env var to flip, external account to
+create, and verification step before a real retail user signs up:**
+[docs/pre_launch_checklist.md](docs/pre_launch_checklist.md). Organized by phase
+so nothing gets missed.
+
 ## What this is
 A production-ready direct indexing platform for individual investors with fee-conscious
 $500K–$2M portfolios. Users hold individual index constituents in their own brokerage
