@@ -1879,15 +1879,31 @@ function onPortfolioChange(id) {
 
 function selectPortfolio(id) {
   state.portfolioId = id;
+  // Fire-and-forget prefetch — warms the backend Finnhub quote cache for
+  // every symbol in this portfolio. Subsequent tab loads (dashboard,
+  // positions, tax-loss) all share that cache, so they come back in <100ms
+  // instead of each paying the 20-symbol Finnhub round-trip.
+  api.getPortfolio(id).catch(() => {});
   loadCurrentTab();
 }
 
 // ---- DASHBOARD ----
 async function loadDashboard() {
+  const requestedFor = state.portfolioId;
+  // Immediate "refreshing" feedback so the user sees the update is in flight
+  document.getElementById('m-total-value').textContent = '…';
+  document.getElementById('m-gain-loss').textContent = '…';
+  document.getElementById('m-positions').textContent = '…';
+  document.getElementById('m-cash').textContent = '…';
+  const hero = document.getElementById('dash-hero-value');
+  if (hero) hero.textContent = '…';
+
   const [data, sectors] = await Promise.all([
-    api.getPortfolio(state.portfolioId),
-    api.getSectors(state.portfolioId),
+    api.getPortfolio(requestedFor),
+    api.getSectors(requestedFor),
   ]);
+  // Race guard: if the user switched portfolios mid-fetch, drop this response
+  if (state.portfolioId !== requestedFor) return;
   state.portfolioData = data;
   renderMetricCards(data);
   renderDashHero(data);
@@ -2070,7 +2086,12 @@ function renderCompositionStats(data, sectors) {
 
 // ---- POSITIONS ----
 async function loadPositions() {
-  const data = await api.getPortfolio(state.portfolioId);
+  const requestedFor = state.portfolioId;
+  const tbody = document.getElementById('positions-tbody');
+  tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:40px;color:var(--muted);">&#8987; Scanning positions…</td></tr>';
+
+  const data = await api.getPortfolio(requestedFor);
+  if (state.portfolioId !== requestedFor) return;   // portfolio switched mid-fetch
   state.positionsAll = data.positions || [];
   // populate sector filter
   const sectors = [...new Set(state.positionsAll.map(p => p.sector).filter(Boolean))].sort();

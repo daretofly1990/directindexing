@@ -9,7 +9,13 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "sqlite+aiosqlite:///./direct_indexing.db"
 
     # Portfolio engine
-    CACHE_TTL: int = 60
+    # Finnhub quote cache TTL in seconds. 5 minutes is the pragmatic default
+    # for a tax-harvesting product — the TLH engine decides "is this 5% below
+    # basis" not "what's the current bid/ask," so 5-minute-stale prices are
+    # invisible and the cache hit rate goes from ~zero to ~95% on typical tab
+    # switches. Lower via env to `CACHE_TTL=60` if you need fresher data;
+    # higher to 900 (15 min) is fine for low-activity accounts.
+    CACHE_TTL: int = 300
     TAX_LOSS_THRESHOLD: float = -0.05
     REBALANCE_THRESHOLD: float = 0.05
     WASH_SALE_DAYS: int = 30
