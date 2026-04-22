@@ -2151,7 +2151,18 @@ function renderPositionsTable(positions) {
 
 // ---- TAX LOSS ----
 async function loadTaxLoss() {
-  const data = await api.getTaxLoss(state.portfolioId);
+  // Clear stale numbers + cards immediately so the user sees the refresh is
+  // happening, not a snapshot from the previous portfolio.
+  const requestedFor = state.portfolioId;
+  document.getElementById('tl-total-loss').textContent = '…';
+  document.getElementById('tl-tax-savings').textContent = '…';
+  document.getElementById('tl-count').textContent = '…';
+  document.getElementById('harvest-cards').innerHTML =
+    '<div class="empty-state"><div class="empty-icon">&#8987;</div><h3>Scanning…</h3><p>Pricing positions against the current market.</p></div>';
+
+  const data = await api.getTaxLoss(requestedFor);
+  // If the user switched portfolios between request and response, discard.
+  if (state.portfolioId !== requestedFor) return;
   renderTaxLoss(data);
 }
 
