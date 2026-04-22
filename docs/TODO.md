@@ -47,6 +47,18 @@
 
 ---
 
+## Pre-launch cutover checklist (flip these the day you go live)
+
+These are deliberately left at dev-safe defaults so nothing breaks during development. When billing is live and you're ready to ship to real retail customers, flip them in order:
+
+- [ ] **Set `CLAUDE_MODEL_DEFAULT=claude-haiku-4-5`** in production `.env`. Keeps `CLAUDE_MODEL_PREMIUM=claude-opus-4-5`. Result: starter / standard / trial-lapsed / no-sub users route to Haiku (~20× cheaper output tokens), premium-tier subscribers keep Opus. Zero code change, just an env flip + restart. Drops API spend from ~$1.50/user/mo to ~$0.08/user/mo on the two cheap tiers. Per-tier routing is tested (`backend/tests/test_claude_model_routing.py`) and defaults are opus/opus so dev / staging / early-beta continues to behave identically.
+- [ ] **Run the 21-case AI eval harness against Haiku** (`CLAUDE_MODEL_DEFAULT=claude-haiku-4-5 pytest backend/tests/test_ai_guardrails.py`) before the cutover to confirm the cheaper model still handles every guardrail edge case. If any fail, either gate that user tier to Opus or patch the prompt — do not ship Haiku on a failing eval.
+- [ ] **Tighten `CORS_ORIGINS`** to the single production host (`https://yourdomain.com`) — no wildcards, no staging hosts.
+- [ ] **Bump `SENTRY_TRACES_SAMPLE_RATE`** from 0.0 → 0.05 for real perf telemetry in prod.
+- [ ] **Set `JSON_LOGS=1`** if the host aggregator expects structured logs (CloudWatch / Datadog / Loki).
+
+---
+
 ## Phase 1 — Launch (self-directed only)
 
 ### Milestone 1 — Individual persona foundation ✅ SHIPPED
