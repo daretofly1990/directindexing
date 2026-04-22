@@ -399,49 +399,88 @@ async def run_tlh_agent(
     draft_plan: dict | None = None
     iterations = 0
 
-    while iterations < max_iterations:
-        iterations += 1
-        response = await client.messages.create(
-            model="claude-opus-4-5",
-            max_tokens=4096,
-            system=system,
-            tools=TOOLS,  # type: ignore[arg-type]
-            messages=messages,
+    try:
+        while iterations < max_iterations:
+            iterations += 1
+            response = await client.messages.create(
+                model="claude-opus-4-5",
+                max_tokens=4096,
+                system=system,
+                tools=TOOLS,  # type: ignore[arg-type]
+                messages=messages,
+            )
+
+            # Collect text output
+            text_parts = [b.text for b in response.content if b.type == "text"]
+            tool_uses = [b for b in response.content if b.type == "tool_use"]
+
+            if text_parts:
+                reasoning_steps.append({"type": "text", "content": "\n".join(text_parts)})
+
+            if response.stop_reason == "end_turn" or not tool_uses:
+                break
+
+            # Execute all tool calls in this turn
+            tool_results = []
+            for tu in tool_uses:
+                result = await _dispatch(db, portfolio_id, tu.name, tu.input)
+                reasoning_steps.append({
+                    "type": "tool_call",
+                    "tool": tu.name,
+                    "input": tu.input,
+                    "result": result,
+                })
+                tool_results.append({
+                    "type": "tool_result",
+                    "tool_use_id": tu.id,
+                    "content": json.dumps(result),
+                })
+
+                # Capture draft plan when produced
+                if tu.name == "draft_trade_list" and "error" not in result:
+                    draft_plan = result
+
+            # Feed results back
+            messages.append({"role": "assistant", "content": response.content})
+            messages.append({"role": "user", "content": tool_results})
+    except (anthropic.AuthenticationError, anthropic.PermissionDeniedError) as exc:
+        # Bad API key or the key's org lost access — fall back to demo
+        logger.warning("Anthropic auth failed, falling back to demo: %s", exc)
+        result = await _run_demo_agent(db, portfolio_id, user_instruction, tax_rate_short, tax_rate_long)
+        result["fallback_reason"] = "anthropic_auth_failed"
+        result["fallback_message"] = "Anthropic API key was rejected. Check the key, then retry for live mode."
+        return result
+    except anthropic.BadRequestError as exc:
+        # Most common: insufficient credits on the account. Message is clear, preserve it.
+        detail = str(exc)
+        logger.warning("Anthropic BadRequestError, falling back to demo: %s", detail[:300])
+        result = await _run_demo_agent(db, portfolio_id, user_instruction, tax_rate_short, tax_rate_long)
+        result["fallback_reason"] = "anthropic_api_error"
+        # Surface a clean short message, avoiding the raw nested JSON dump
+        short = detail
+        if "credit balance is too low" in detail.lower():
+            short = (
+                "Your Anthropic account is out of credits — the advisor fell back "
+                "to demo mode. Top up at console.anthropic.com → Plans & Billing to "
+                "re-enable live mode."
+            )
+        elif "model" in detail.lower() and "not found" in detail.lower():
+            short = (
+                "The configured Claude model is not available on your Anthropic "
+                "account. Falling back to demo mode."
+            )
+        result["fallback_message"] = short
+        return result
+    except (anthropic.RateLimitError, anthropic.APIConnectionError, anthropic.APIStatusError) as exc:
+        # Transient upstream failure — degrade to demo instead of 500
+        logger.warning("Anthropic API unavailable, falling back to demo: %s", exc)
+        result = await _run_demo_agent(db, portfolio_id, user_instruction, tax_rate_short, tax_rate_long)
+        result["fallback_reason"] = "anthropic_unavailable"
+        result["fallback_message"] = (
+            "Anthropic API is unreachable or rate-limited right now. "
+            "Showing demo-mode results — try live mode again in a few minutes."
         )
-
-        # Collect text output
-        text_parts = [b.text for b in response.content if b.type == "text"]
-        tool_uses = [b for b in response.content if b.type == "tool_use"]
-
-        if text_parts:
-            reasoning_steps.append({"type": "text", "content": "\n".join(text_parts)})
-
-        if response.stop_reason == "end_turn" or not tool_uses:
-            break
-
-        # Execute all tool calls in this turn
-        tool_results = []
-        for tu in tool_uses:
-            result = await _dispatch(db, portfolio_id, tu.name, tu.input)
-            reasoning_steps.append({
-                "type": "tool_call",
-                "tool": tu.name,
-                "input": tu.input,
-                "result": result,
-            })
-            tool_results.append({
-                "type": "tool_result",
-                "tool_use_id": tu.id,
-                "content": json.dumps(result),
-            })
-
-            # Capture draft plan when produced
-            if tu.name == "draft_trade_list" and "error" not in result:
-                draft_plan = result
-
-        # Feed results back
-        messages.append({"role": "assistant", "content": response.content})
-        messages.append({"role": "user", "content": tool_results})
+        return result
 
     summary = "\n".join(
         step["content"] for step in reasoning_steps if step["type"] == "text"

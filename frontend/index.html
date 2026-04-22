@@ -2874,8 +2874,21 @@ async function runAdvisor() {
 }
 
 function renderAdvisorOutput(r) {
-  const mode = r.demo_mode ? 'Demo mode (no ANTHROPIC_API_KEY)' : `Live (${r.iterations||0} iterations)`;
+  let mode;
+  if (r.fallback_reason) {
+    mode = 'Demo mode (fallback)';
+  } else if (r.demo_mode) {
+    mode = 'Demo mode (no ANTHROPIC_API_KEY)';
+  } else {
+    mode = `Live (${r.iterations||0} iterations)`;
+  }
   document.getElementById('advisor-mode-badge').textContent = mode;
+
+  // Fallback banner — explains *why* live mode wasn't used
+  const fallbackHtml = r.fallback_reason ? `
+    <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);color:var(--warning);padding:12px 14px;border-radius:var(--radius-sm);font-size:13px;line-height:1.5;margin-bottom:16px;">
+      <strong>Fell back to demo mode.</strong> ${r.fallback_message || 'Live advisor is unavailable.'}
+    </div>` : '';
 
   const steps = (r.reasoning_steps || []).map(s => {
     if (s.type === 'text') {
@@ -2921,6 +2934,7 @@ function renderAdvisorOutput(r) {
     </div>` : '';
 
   document.getElementById('advisor-output').innerHTML = `
+    ${fallbackHtml}
     ${summaryHtml}
     ${warnHtml}
     ${saveBtn}
