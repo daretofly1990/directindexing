@@ -28,6 +28,7 @@ from ...services.ai_guardrails import (
 )
 from ...services.disclosures import ADVISOR_DISCLOSURE
 from ...services.reasoning_builder import enrich_draft_plan
+from ...services.billing_service import get_claude_model_for_user, get_active_tier
 from .acknowledgements import CURRENT_VERSIONS, user_has_accepted
 from ..deps import assert_portfolio_access
 
@@ -71,6 +72,13 @@ async def harvest_agent(
                 "POST /api/acknowledgements with document_type=adv_part_2a.",
             )
 
+    # Pick the Claude model for this user's subscription tier. Premium →
+    # CLAUDE_MODEL_PREMIUM, everyone else → CLAUDE_MODEL_DEFAULT. During dev
+    # (before Stripe is wired) both env vars default to the same model, so
+    # this is a no-op; post-launch, flip CLAUDE_MODEL_DEFAULT to a cheaper
+    # option (claude-haiku-4-5) to cut API costs on the low tiers.
+    user_tier = await get_active_tier(db, current_user.id)
+    selected_model = await get_claude_model_for_user(db, current_user.id)
     try:
         result = await run_tlh_agent(
             db=db,
@@ -79,11 +87,16 @@ async def harvest_agent(
             tax_rate_short=req.tax_rate_short,
             tax_rate_long=req.tax_rate_long,
             max_iterations=req.max_iterations,
+            model=selected_model,
         )
     except RuntimeError as e:
         raise HTTPException(503, str(e))
     except Exception as e:
         raise HTTPException(500, f"Agent error: {e}")
+
+    # Expose the user's tier so the frontend can show an upgrade nudge on
+    # non-premium tiers. The tier itself is not sensitive.
+    result["user_tier"] = user_tier
 
     # Strip the admin-only fallback_admin_detail for non-admin callers —
     # retail users shouldn't see "top up Anthropic credits" instructions.
@@ -115,6 +128,9 @@ async def harvest_agent(
     tool_calls = [
         s for s in result.get("reasoning_steps", []) if s.get("type") == "tool_call"
     ]
+    # Record the actual model used (including "demo" when we fell back), not
+    # the hardcoded constant — audit trail must reflect what actually ran so
+    # the recommendation is reproducible years later under SEC Rule 204-2.
     rec_log = await log_recommendation(
         db=db,
         user_id=current_user.id,
@@ -123,7 +139,7 @@ async def harvest_agent(
         reasoning=reasoning_text,
         tool_calls=tool_calls,
         draft_plan=draft_plan,
-        model_version=MODEL_VERSION,
+        model_version=result.get("model") or MODEL_VERSION,
         prompt_version=PROMPT_VERSION,
         adv_version_acknowledged=CURRENT_VERSIONS.get("adv_part_2a"),
         demo_mode=bool(result.get("demo_mode")),

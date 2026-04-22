@@ -2880,9 +2880,23 @@ function renderAdvisorOutput(r) {
   } else if (r.demo_mode) {
     mode = 'Demo mode (no ANTHROPIC_API_KEY)';
   } else {
-    mode = `Live (${r.iterations||0} iterations)`;
+    mode = `Live · ${r.model || 'claude'} · ${r.iterations||0} iteration${r.iterations===1?'':'s'}`;
   }
   document.getElementById('advisor-mode-badge').textContent = mode;
+
+  // Upgrade nudge: non-premium tiers with live Anthropic see a small card
+  // explaining that they'd get opus (or whatever CLAUDE_MODEL_PREMIUM is)
+  // if they upgrade. Shown only when the caller isn't already premium AND
+  // the run actually used the Claude API (not demo / not fallback).
+  const upgradeNudgeHtml = (
+    !r.demo_mode && !r.fallback_reason &&
+    r.user_tier && r.user_tier !== 'premium'
+  ) ? `
+    <div style="background:rgba(139,92,246,0.08);border:1px solid rgba(139,92,246,0.3);color:var(--purple);padding:10px 14px;border-radius:var(--radius-sm);font-size:12px;line-height:1.5;margin-bottom:16px;">
+      <strong>Your ${r.user_tier.charAt(0).toUpperCase() + r.user_tier.slice(1)} plan</strong> analyzes with <code>${r.model || 'claude'}</code>.
+      <a href="#" onclick="switchTab('billing');return false;" style="color:var(--primary);text-decoration:none;font-weight:600;">Upgrade to Premium</a>
+      for deeper reasoning with <code>claude-opus-4-5</code> on every run.
+    </div>` : '';
 
   // Fallback banner — user-facing message only.
   // If the caller is an admin, we ALSO surface the operator-level diagnostic
@@ -2941,6 +2955,7 @@ function renderAdvisorOutput(r) {
 
   document.getElementById('advisor-output').innerHTML = `
     ${fallbackHtml}
+    ${upgradeNudgeHtml}
     ${summaryHtml}
     ${warnHtml}
     ${saveBtn}

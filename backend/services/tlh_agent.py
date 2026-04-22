@@ -371,18 +371,24 @@ async def run_tlh_agent(
     tax_rate_short: float = 0.37,
     tax_rate_long: float = 0.20,
     max_iterations: int = 10,
+    model: str | None = None,
 ) -> dict:
     """
     Run the Claude TLH reasoning loop for a given portfolio.
 
-    Returns:
-      reasoning_steps  — ordered list of what Claude did (text + tool calls)
-      draft_plan       — the final draft_trade_list output (None if not produced)
-      summary          — Claude's natural-language summary
-      iterations       — number of tool-call rounds
+    `model` defaults to settings.CLAUDE_MODEL_DEFAULT when not passed — the
+    agent route resolves it per-user via billing_service.get_claude_model_for_user
+    so premium subscribers get opus while everyone else gets the default
+    (haiku after launch).
+
+    Returns dict with reasoning_steps, draft_plan, summary, iterations, and
+    the `model` actually used — propagated to RecommendationLog for audit.
     """
+    resolved_model = model or settings.CLAUDE_MODEL_DEFAULT
     if not settings.ANTHROPIC_API_KEY:
-        return await _run_demo_agent(db, portfolio_id, user_instruction, tax_rate_short, tax_rate_long)
+        r = await _run_demo_agent(db, portfolio_id, user_instruction, tax_rate_short, tax_rate_long)
+        r["model"] = "demo"
+        return r
 
     import anthropic
 
@@ -403,7 +409,7 @@ async def run_tlh_agent(
         while iterations < max_iterations:
             iterations += 1
             response = await client.messages.create(
-                model="claude-opus-4-5",
+                model=resolved_model,
                 max_tokens=4096,
                 system=system,
                 tools=TOOLS,  # type: ignore[arg-type]
@@ -447,6 +453,8 @@ async def run_tlh_agent(
         # Bad API key — again, OUR key, not the user's.
         logger.warning("Anthropic auth failed, falling back to demo: %s", exc)
         result = await _run_demo_agent(db, portfolio_id, user_instruction, tax_rate_short, tax_rate_long)
+        result["model"] = "demo"
+        result["attempted_model"] = resolved_model
         result["fallback_reason"] = "anthropic_auth_failed"
         result["fallback_message"] = (
             "The AI advisor is temporarily unavailable. The analysis below still "
@@ -461,6 +469,8 @@ async def run_tlh_agent(
         detail = str(exc)
         logger.warning("Anthropic BadRequestError, falling back to demo: %s", detail[:300])
         result = await _run_demo_agent(db, portfolio_id, user_instruction, tax_rate_short, tax_rate_long)
+        result["model"] = "demo"
+        result["attempted_model"] = resolved_model
         result["fallback_reason"] = "anthropic_api_error"
         result["fallback_message"] = (
             "The AI advisor is temporarily unavailable. The analysis below "
@@ -484,6 +494,8 @@ async def run_tlh_agent(
         # Transient upstream failure — degrade to demo instead of 500
         logger.warning("Anthropic API unavailable, falling back to demo: %s", exc)
         result = await _run_demo_agent(db, portfolio_id, user_instruction, tax_rate_short, tax_rate_long)
+        result["model"] = "demo"
+        result["attempted_model"] = resolved_model
         result["fallback_reason"] = "anthropic_unavailable"
         result["fallback_message"] = (
             "The AI advisor is temporarily overloaded. The analysis below uses "
@@ -503,4 +515,5 @@ async def run_tlh_agent(
         "reasoning_steps": reasoning_steps,
         "iterations": iterations,
         "status": "draft" if draft_plan else "incomplete",
+        "model": resolved_model,
     }

@@ -29,6 +29,18 @@ class Settings(BaseSettings):
     # Anthropic (Claude AI advisor)
     ANTHROPIC_API_KEY: str = ""
 
+    # Model selection per subscription tier. Both default to opus-4-5 so
+    # existing behaviour is preserved until you change them. Flip
+    # CLAUDE_MODEL_DEFAULT to a cheaper model (e.g. claude-haiku-4-5) after
+    # launch to improve margin on starter/standard tiers without touching
+    # code or restarting. CLAUDE_MODEL_PREMIUM is used for premium-tier
+    # subscribers (subscription.status='active' AND tier='premium'); everyone
+    # else (no sub, trialing, starter, standard) gets CLAUDE_MODEL_DEFAULT.
+    # When Anthropic deprecates a model, bump these two env vars, run the
+    # eval harness, redeploy. See docs/TODO.md M6 for upgrade playbook.
+    CLAUDE_MODEL_DEFAULT: str = "claude-opus-4-5"
+    CLAUDE_MODEL_PREMIUM: str = "claude-opus-4-5"
+
     # CORS — comma-separated list of allowed origins
     CORS_ORIGINS: str = "http://localhost:8000"
 

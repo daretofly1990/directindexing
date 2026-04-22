@@ -110,6 +110,37 @@ async def get_subscription(db: AsyncSession, user_id: int) -> Subscription | Non
     return r.scalar_one_or_none()
 
 
+async def get_active_tier(db: AsyncSession, user_id: int) -> str:
+    """
+    Return the user's current billable tier: one of
+      "premium" | "standard" | "starter" | "default"
+
+    "default" covers the cases where there's no active subscription (not yet
+    set up, trial lapsed, cancelled, past due). Admin users also return
+    "default" — they don't pay, but they should get DEFAULT model too unless
+    billing_enabled=False in which case nothing matters.
+    """
+    sub = await get_subscription(db, user_id)
+    if sub is None:
+        return "default"
+    # Trialing counts as the purchased tier — user is experiencing what they're paying for
+    if sub.status in ("active", "trialing") and sub.tier in ("premium", "standard", "starter"):
+        return sub.tier
+    return "default"
+
+
+async def get_claude_model_for_user(db: AsyncSession, user_id: int) -> str:
+    """
+    Pick the Claude model for this user. Premium tier → CLAUDE_MODEL_PREMIUM,
+    everyone else → CLAUDE_MODEL_DEFAULT. Trialing premium users get premium
+    (so they feel the upgrade before being charged).
+    """
+    tier = await get_active_tier(db, user_id)
+    if tier == "premium":
+        return settings.CLAUDE_MODEL_PREMIUM
+    return settings.CLAUDE_MODEL_DEFAULT
+
+
 async def list_invoices(db: AsyncSession, user: User, limit: int = 20) -> list[dict]:
     """
     Pull invoice list for this user from Stripe. Returns PDF-downloadable URLs.
