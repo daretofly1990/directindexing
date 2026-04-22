@@ -2194,11 +2194,11 @@ function renderTaxLoss(data) {
         <div class="harvest-meta">
           <div class="harvest-meta-item">
             <div class="label">Loss Amount</div>
-            <div class="value td-negative">${fmt$(opp.loss_amount)}</div>
+            <div class="value td-negative">${fmt$(opp.total_unrealized_loss)}</div>
           </div>
           <div class="harvest-meta-item">
             <div class="label">Loss %</div>
-            <div class="value td-negative">${opp.loss_percent.toFixed(2)}%</div>
+            <div class="value td-negative">${(opp.position_loss_percent ?? 0).toFixed(2)}%</div>
           </div>
           <div class="harvest-meta-item">
             <div class="label">Est. Tax Savings</div>
@@ -2206,7 +2206,7 @@ function renderTaxLoss(data) {
           </div>
           <div class="harvest-meta-item">
             <div class="label">Cost Basis</div>
-            <div class="value">${fmt$(opp.cost_basis)}</div>
+            <div class="value">${fmt$(opp.avg_cost_basis)}</div>
           </div>
           <div class="harvest-meta-item">
             <div class="label">Current Price</div>
@@ -2214,7 +2214,7 @@ function renderTaxLoss(data) {
           </div>
           <div class="harvest-meta-item">
             <div class="label">Shares</div>
-            <div class="value">${fmtNum(opp.shares, 4)}</div>
+            <div class="value">${fmtNum(opp.total_shares, 4)}</div>
           </div>
         </div>
         ${replacements ? `
