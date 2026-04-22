@@ -25,7 +25,6 @@ from .disclosures import TAX_REPORT_DISCLOSURE
 
 
 def _row_for_lot(lot, symbol: str) -> list:
-    holding_days = (lot.sale_date - lot.purchase_date).days
     cost_total = round(lot.cost_basis * (lot.shares or 0), 2)
     wash = round(lot.wash_sale_disallowed or 0.0, 2)
     gl = round(lot.realized_gain_loss or 0.0, 2)
@@ -62,7 +61,6 @@ def build_tax_report_pdf(
     styles = getSampleStyleSheet()
     title_style = styles["Title"]
     body = styles["BodyText"]
-    small = ParagraphStyle("small", parent=body, fontSize=8, leading=10)
     disclosure_style = ParagraphStyle(
         "disc", parent=body, fontSize=8, leading=10, textColor=colors.HexColor("#b45309"),
     )

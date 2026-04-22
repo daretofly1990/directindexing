@@ -95,7 +95,6 @@ async def test_kill_switch_blocks_spec_id_sale(db, monkeypatch):
     port, pos = await _mk_portfolio_with_lot(db)
     await kill_switch.set_halted(db, True, "halt", user_id=None)
 
-    lots = (await db.execute(select(Position).where(Position.id == pos.id))).scalar_one()
     from backend.models.models import TaxLot
     lot = (await db.execute(select(TaxLot).where(TaxLot.position_id == pos.id))).scalar_one()
 

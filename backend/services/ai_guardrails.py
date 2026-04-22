@@ -163,8 +163,6 @@ async def apply_guardrails(
     draft_plan["buys"] = filtered_buys
 
     # 2. Wash-sale pre-sale: flag SELLs of symbols bought in last 30 days
-    recent_buys = await _symbols_sold_recently(db, portfolio_id)  # reuses helper for recent transactions
-    # We actually want BUYs in last 30d — separate query
     r = await db.execute(
         select(Transaction.symbol).where(
             Transaction.portfolio_id == portfolio_id,

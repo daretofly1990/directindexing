@@ -1,0 +1,30 @@
+[tool.ruff]
+line-length = 140
+target-version = "py312"
+extend-exclude = [
+    "alembic/versions",   # generated migrations — don't lint
+    "backend/data",       # data snapshots, not code
+]
+
+[tool.ruff.lint]
+# Default ruff ships with E + F. Add W. Stay conservative — we're using this
+# as a "catch real bugs" gate, not an opinionated style enforcer.
+select = ["E", "F", "W"]
+
+# Rules we deliberately silence — rationale inline:
+#   E402 — logging/sentry must configure before route imports; intentional.
+#   E501 — line-length is not a quality signal here; 140 is generous enough
+#          and long f-strings + type hints routinely exceed it.
+#   E701/E702 — one-liners like `if x: return` are legitimate.
+#   E712 — SQLAlchemy's `Column == True` / `== False` is the idiom for
+#          boolean WHERE clauses on async engines. `is True` generates
+#          non-parameterized SQL and breaks the query.
+#   E741 — `l` for lot/line in list comprehensions is pervasive; not worth
+#          renaming 30+ sites.
+#   F401 — many conditional/feature-flag imports read as unused. We prefer
+#          catching real dead code via code review over rule noise.
+ignore = ["E402", "E501", "E701", "E702", "E712", "E741", "F401"]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests use monkey-patch imports + redefine helpers across modules.
+"backend/tests/*" = ["F811"]

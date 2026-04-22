@@ -42,7 +42,9 @@ async def create_individual_user(
     full_name: str | None = None,
     tax_rate_short: float = 0.37,
     tax_rate_long: float = 0.20,
-) -> tuple[User, "Client"]:
+):
+    # Returns (User, Client). Not type-annotated to avoid a forward-reference
+    # import cycle — Client is imported lazily below.
     """
     Sign up a retail individual: creates the User (role=individual) AND a
     self-Client record in a single atomic flow. The self-client owns all
