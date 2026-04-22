@@ -85,6 +85,11 @@ async def harvest_agent(
     except Exception as e:
         raise HTTPException(500, f"Agent error: {e}")
 
+    # Strip the admin-only fallback_admin_detail for non-admin callers —
+    # retail users shouldn't see "top up Anthropic credits" instructions.
+    if current_user.role != "admin":
+        result.pop("fallback_admin_detail", None)
+
     # Guardrails: enforce wash-sale / substantially-identical / max-pct caps
     draft_plan = result.get("draft_plan")
     if draft_plan is not None:

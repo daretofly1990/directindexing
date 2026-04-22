@@ -2884,10 +2884,16 @@ function renderAdvisorOutput(r) {
   }
   document.getElementById('advisor-mode-badge').textContent = mode;
 
-  // Fallback banner — explains *why* live mode wasn't used
+  // Fallback banner — user-facing message only.
+  // If the caller is an admin, we ALSO surface the operator-level diagnostic
+  // ("top up Anthropic credits" etc.) so whoever is on-call sees what to fix.
+  const adminDetail = r.fallback_admin_detail
+    ? `<div style="margin-top:8px;font-size:11px;color:var(--warning);opacity:0.85;"><strong>Admin:</strong> ${r.fallback_admin_detail}</div>`
+    : '';
   const fallbackHtml = r.fallback_reason ? `
     <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);color:var(--warning);padding:12px 14px;border-radius:var(--radius-sm);font-size:13px;line-height:1.5;margin-bottom:16px;">
-      <strong>Fell back to demo mode.</strong> ${r.fallback_message || 'Live advisor is unavailable.'}
+      ${r.fallback_message || 'The advisor is temporarily unavailable.'}
+      ${adminDetail}
     </div>` : '';
 
   const steps = (r.reasoning_steps || []).map(s => {

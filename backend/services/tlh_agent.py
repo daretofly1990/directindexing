@@ -444,32 +444,41 @@ async def run_tlh_agent(
             messages.append({"role": "assistant", "content": response.content})
             messages.append({"role": "user", "content": tool_results})
     except (anthropic.AuthenticationError, anthropic.PermissionDeniedError) as exc:
-        # Bad API key or the key's org lost access — fall back to demo
+        # Bad API key — again, OUR key, not the user's.
         logger.warning("Anthropic auth failed, falling back to demo: %s", exc)
         result = await _run_demo_agent(db, portfolio_id, user_instruction, tax_rate_short, tax_rate_long)
         result["fallback_reason"] = "anthropic_auth_failed"
-        result["fallback_message"] = "Anthropic API key was rejected. Check the key, then retry for live mode."
+        result["fallback_message"] = (
+            "The AI advisor is temporarily unavailable. The analysis below still "
+            "uses the same tax-loss harvesting engine on your real positions."
+        )
+        result["fallback_admin_detail"] = f"Anthropic auth failed: {str(exc)[:200]}"
         return result
     except anthropic.BadRequestError as exc:
-        # Most common: insufficient credits on the account. Message is clear, preserve it.
+        # Most common: insufficient credits on OUR (the operator's) account —
+        # users don't have Anthropic accounts. Show end-users a neutral message;
+        # the admin sees the real diagnostic in `fallback_admin_detail`.
         detail = str(exc)
         logger.warning("Anthropic BadRequestError, falling back to demo: %s", detail[:300])
         result = await _run_demo_agent(db, portfolio_id, user_instruction, tax_rate_short, tax_rate_long)
         result["fallback_reason"] = "anthropic_api_error"
-        # Surface a clean short message, avoiding the raw nested JSON dump
-        short = detail
+        result["fallback_message"] = (
+            "The AI advisor is temporarily unavailable. The analysis below "
+            "comes from the same tax-loss harvesting engine using a simpler "
+            "decision logic — your numbers are real, just not Claude's reasoning."
+        )
+        # Admin-only detail the frontend can show conditionally
         if "credit balance is too low" in detail.lower():
-            short = (
-                "Your Anthropic account is out of credits — the advisor fell back "
-                "to demo mode. Top up at console.anthropic.com → Plans & Billing to "
-                "re-enable live mode."
+            result["fallback_admin_detail"] = (
+                "Anthropic credit balance exhausted. Top up at "
+                "console.anthropic.com → Plans & Billing."
             )
         elif "model" in detail.lower() and "not found" in detail.lower():
-            short = (
-                "The configured Claude model is not available on your Anthropic "
-                "account. Falling back to demo mode."
+            result["fallback_admin_detail"] = (
+                "Configured Claude model not available on this Anthropic account."
             )
-        result["fallback_message"] = short
+        else:
+            result["fallback_admin_detail"] = detail[:300]
         return result
     except (anthropic.RateLimitError, anthropic.APIConnectionError, anthropic.APIStatusError) as exc:
         # Transient upstream failure — degrade to demo instead of 500
@@ -477,9 +486,10 @@ async def run_tlh_agent(
         result = await _run_demo_agent(db, portfolio_id, user_instruction, tax_rate_short, tax_rate_long)
         result["fallback_reason"] = "anthropic_unavailable"
         result["fallback_message"] = (
-            "Anthropic API is unreachable or rate-limited right now. "
-            "Showing demo-mode results — try live mode again in a few minutes."
+            "The AI advisor is temporarily overloaded. The analysis below uses "
+            "the same engine with a simpler decision path — try again in a few minutes for the full Claude reasoning."
         )
+        result["fallback_admin_detail"] = f"Anthropic {type(exc).__name__}: {str(exc)[:200]}"
         return result
 
     summary = "\n".join(
